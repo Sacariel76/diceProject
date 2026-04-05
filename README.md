@@ -40,7 +40,7 @@ Para más ayuda con el desarrollo en Flutter, consulta la [documentación en lí
 
 Para el funcionamiento de este proyecto, se han integrado las siguientes librerías clave:
 
-* **[web_socket_channel](https://pub.dev/packages/web_socket_channel):** Utilizada para establecer la conexión bidireccional y persistente con el servidor en AWS. Es el motor que permite que los lanzamientos de dados se vean en tiempo real en todos los dispositivos.
+* flutter pub add web_socket_channel
 * **dart:convert:** Librería nativa de Dart empleada para la serialización y deserialización de objetos JSON, permitiendo que la App y el servidor de Rust intercambien datos complejos de forma eficiente.
 
 ## 📜 Reglas del Juego
