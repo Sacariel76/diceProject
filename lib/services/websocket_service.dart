@@ -1,47 +1,58 @@
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketService {
   WebSocketChannel? _channel;
-  
-  // future URL of the WebSocket server (in AWS, it will be the public IP of EC2 instance)
-  final String _serverUrl = 'ws://TU_IP_DE_AWS:5000';
 
-  /// initialize the connection to the WebSocket server
-  void connect(String playerName) {
+  final String _serverUrl = 'ws://3.228.25.228:5000';
+
+  bool get isConnected => _channel != null;
+
+  void connect() {
     try {
       _channel = WebSocketChannel.connect(Uri.parse(_serverUrl));
       print('Conectando al servidor...');
-      
-      // send the first mesage to the server to identify the player
-      sendMessage({
-        "accion": "conectar",
-        "jugador": playerName
-      });
-      
     } catch (e) {
       print('Error de conexión: $e');
     }
   }
 
-  /// listen the messages from the server
-  Stream<dynamic>? get messagesStream {
-    return _channel?.stream;
+  Stream<Map<String, dynamic>>? get messagesStream {
+    return _channel?.stream.map((message) {
+      try {
+        return jsonDecode(message) as Map<String, dynamic>;
+      } catch (e) {
+        print('Error al decodificar mensaje: $e');
+        return {
+          "type": "error",
+          "message": "Mensaje inválido recibido del servidor"
+        };
+      }
+    });
   }
 
-  /// send data to the server (JSON format)
   void sendMessage(Map<String, dynamic> data) {
-    if (_channel != null) {
-      // convert the data to JSON string before sending
-      String jsonString = jsonEncode(data);
+    if (_channel == null) {
+      print('No hay conexión activa');
+      return;
+    }
+
+    try {
+      final jsonString = jsonEncode(data);
       _channel!.sink.add(jsonString);
       print('Enviado: $jsonString');
+    } catch (e) {
+      print('Error al enviar mensaje: $e');
     }
   }
 
-  /// initialize the disconnection from the WebSocket server
   void disconnect() {
-    _channel?.sink.close();
-    print('Sesión cerrada');
+    try {
+      _channel?.sink.close();
+      _channel = null;
+      print('Sesión cerrada');
+    } catch (e) {
+      print('Error al cerrar conexión: $e');
+    }
   }
 }
