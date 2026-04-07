@@ -4,7 +4,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 class WebSocketService {
   WebSocketChannel? _channel;
 
-  final String _serverUrl = 'ws://3.228.25.228:5000';
+  final String _serverUrl = 'ws://34.232.89.243:5000';
 
   bool get isConnected => _channel != null;
 
