@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,700;1,400;1,700&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#5c4300",
+                    "tertiary-fixed": "#ffdad6",
+                    "secondary-container": "#ffbf00",
+                    "on-secondary-fixed": "#261a00",
+                    "on-surface-variant": "#c1c9bf",
+                    "surface-container-low": "#1b1c1c",
+                    "error-container": "#93000a",
+                    "tertiary": "#ffb3ac",
+                    "on-error": "#690005",
+                    "background": "#131313",
+                    "surface-variant": "#353535",
+                    "outline": "#8b938a",
+                    "on-primary-fixed-variant": "#234f32",
+                    "primary-container": "#1a472a",
+                    "on-surface": "#e4e2e1",
+                    "inverse-surface": "#e4e2e1",
+                    "tertiary-container": "#83000d",
+                    "on-tertiary-fixed-variant": "#930010",
+                    "outline-variant": "#414942",
+                    "on-tertiary": "#680008",
+                    "on-primary": "#08381d",
+                    "on-tertiary-fixed": "#410003",
+                    "surface": "#131313",
+                    "primary": "#a1d2ab",
+                    "surface-tint": "#a1d2ab",
+                    "on-secondary": "#402d00",
+                    "secondary-fixed": "#ffdfa0",
+                    "on-error-container": "#ffdad6",
+                    "on-tertiary-container": "#ff867d",
+                    "tertiary-fixed-dim": "#ffb3ac",
+                    "primary-fixed-dim": "#a1d2ab",
+                    "on-primary-container": "#85b590",
+                    "surface-container-high": "#2a2a2a",
+                    "on-background": "#e4e2e1",
+                    "on-secondary-container": "#6d5000",
+                    "on-primary-fixed": "#00210d",
+                    "error": "#ffb4ab",
+                    "surface-container": "#1f2020",
+                    "primary-fixed": "#bdefc6",
+                    "surface-dim": "#131313",
+                    "surface-bright": "#393939",
+                    "inverse-on-surface": "#303030",
+                    "inverse-primary": "#3b6848",
+                    "surface-container-lowest": "#0e0e0e",
+                    "secondary-fixed-dim": "#fbbc00",
+                    "surface-container-highest": "#353535",
+                    "secondary": "#ffe2ab"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Newsreader"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .serif-italic { font-family: 'Newsreader', serif; font-style: italic; }
+        .sans-precision { font-family: 'Manrope', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background sans-precision min-h-screen flex flex-col overflow-hidden">
+<!-- TopAppBar -->
+<header class="bg-stone-950/80 backdrop-blur-md flex justify-between items-center px-6 py-4 w-full z-50 shadow-2xl shadow-emerald-950/20">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-primary/20">
+<img alt="Player profile portrait" class="w-full h-full object-cover" data-alt="Cerca de un hombre elegante con traje oscuro y expresión serena en un entorno de iluminación tenue de club privado" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6M-RhPZMy5AZrF0Uq46GDFQgrEIO8Jo_Y5MAwyu6kBf2ipjn0WOimN2UBo0zKxYf2-KQwgeo_lS-BdMCs4gUQgxfR263Fb-bx4oFMKIZHSvXduOGU9laP24LbO4Ul1f1PKAlYOHLBimqxnt6k7Pnd7rpfWuqA51EMz9zH1WJ5msvz8WW0CwbVLfL_8Xc1vwe2Om86Vz2mBDBL5l_O2PiOko9U8rHtz7M_HoEXWLxVywQ6c-eDAKYEfMm0VZRl3h3qtudBPWnafp3Y"/>
+</div>
+<h1 class="serif-italic text-emerald-100 text-2xl">Salon de Dés</h1>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<span class="text-stone-500 font-label text-[10px] uppercase tracking-[0.2em]">Fase de Apuesta</span>
+<div class="flex items-center gap-4">
+<span class="text-stone-400 text-sm">Ronda 1 de 4</span>
+<span class="text-primary font-headline italic text-lg">Turno de Alejandro</span>
+</div>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-emerald-900/20 transition-colors text-emerald-400">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</header>
+<!-- Main Table Area -->
+<main class="flex-1 relative flex flex-col items-center justify-center p-4">
+<!-- Table Background with Radial Gradient -->
+<div class="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-container via-surface to-background opacity-60"></div>
+<!-- Opponents Summary -->
+<div class="absolute top-8 left-8 right-8 z-10 flex justify-between items-start pointer-events-none">
+<div class="flex gap-4 pointer-events-auto">
+<div class="bg-surface-container-low p-4 rounded-xl shadow-xl border border-outline-variant/10 min-w-[140px]">
+<p class="text-stone-500 text-[10px] uppercase tracking-widest mb-1">Beatriz</p>
+<p class="serif-italic text-2xl text-on-surface">1,240 <span class="text-sm text-primary">pts</span></p>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl shadow-xl border border-outline-variant/10 min-w-[140px]">
+<p class="text-stone-500 text-[10px] uppercase tracking-widest mb-1">Carlos</p>
+<p class="serif-italic text-2xl text-on-surface">980 <span class="text-sm text-primary">pts</span></p>
+</div>
+</div>
+<div class="bg-primary-container/40 backdrop-blur-md p-4 rounded-xl border border-primary/20 pointer-events-auto">
+<p class="text-primary text-[10px] uppercase tracking-widest mb-1">Tu Saldo</p>
+<p class="serif-italic text-3xl text-primary-fixed-dim">$4,500</p>
+</div>
+</div>
+<!-- Central Dice Zone (Public) -->
+<div class="relative z-10 flex flex-col items-center gap-8">
+<h2 class="serif-italic text-stone-400 text-xl">Dados de la Mesa</h2>
+<div class="flex gap-6">
+<!-- Die 1 -->
+<div class="w-20 h-20 bg-stone-100 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center justify-center relative overflow-hidden group">
+<div class="grid grid-cols-3 grid-rows-3 gap-2 p-3 w-full h-full">
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+<div></div>
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+<div></div>
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+<div></div>
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+<div></div>
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+</div>
+</div>
+<!-- Die 2 -->
+<div class="w-20 h-20 bg-stone-100 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center justify-center">
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+</div>
+<!-- Die 3 -->
+<div class="w-20 h-20 bg-stone-100 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center justify-center">
+<div class="grid grid-cols-2 grid-rows-2 gap-4 p-4 w-full h-full">
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+<div class="w-3 h-3 bg-stone-900 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Player Private Zone -->
+<div class="absolute bottom-32 z-10 flex flex-col items-center w-full">
+<div class="bg-surface-container-highest/30 backdrop-blur-xl px-12 py-8 rounded-[3rem] border border-outline-variant/10 shadow-2xl">
+<div class="flex items-end gap-10">
+<!-- Tower 1 -->
+<div class="flex flex-col-reverse gap-1 items-center">
+<div class="w-14 h-14 bg-secondary-container rounded-lg shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container" data-icon="casino">casino</span>
+</div>
+<div class="w-14 h-14 bg-secondary-container/80 rounded-lg shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container/60" data-icon="casino">casino</span>
+</div>
+<span class="text-stone-500 text-[10px] font-bold mb-2 uppercase tracking-tighter">Torre A</span>
+</div>
+<!-- Tower 2 -->
+<div class="flex flex-col-reverse gap-1 items-center">
+<div class="w-14 h-14 bg-emerald-600 rounded-lg shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="casino" style="font-variation-settings: 'FILL' 1;">casino</span>
+</div>
+<div class="w-14 h-14 bg-emerald-600 rounded-lg shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="casino" style="font-variation-settings: 'FILL' 1;">casino</span>
+</div>
+<div class="w-14 h-14 bg-emerald-600 rounded-lg shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="casino" style="font-variation-settings: 'FILL' 1;">casino</span>
+</div>
+<span class="text-stone-500 text-[10px] font-bold mb-2 uppercase tracking-tighter">Torre B</span>
+</div>
+<!-- Tower 3 -->
+<div class="flex flex-col-reverse gap-1 items-center">
+<div class="w-14 h-14 bg-amber-700 rounded-lg shadow-lg flex items-center justify-center">
+<div class="w-2 h-2 bg-white/40 rounded-full"></div>
+</div>
+<span class="text-stone-500 text-[10px] font-bold mb-2 uppercase tracking-tighter">Torre C</span>
+</div>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-stone-500">
+<span class="material-symbols-outlined text-sm" data-icon="visibility_off">visibility_off</span>
+<span class="text-[10px] uppercase tracking-widest font-semibold">Tus dados están ocultos para otros</span>
+</div>
+</div>
+<!-- FAB Action Area -->
+<div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex gap-4">
+<button class="bg-surface-container-highest text-on-surface px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-surface-bright transition-all active:scale-95 shadow-xl">
+                Pasar Turno
+            </button>
+<button class="bg-secondary-container text-on-secondary-container px-12 py-4 rounded-xl font-extrabold uppercase tracking-[0.2em] text-sm hover:brightness-110 transition-all active:scale-95 shadow-[0_0_30px_rgba(255,191,0,0.3)]">
+                Lanzar Dados
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-stone-950/90 backdrop-blur-xl rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+<div class="flex flex-col items-center justify-center bg-emerald-900/40 text-emerald-100 rounded-xl px-5 py-2 translate-y-[-2px] transition-transform">
+<span class="material-symbols-outlined" data-icon="casino" style="font-variation-settings: 'FILL' 1;">casino</span>
+<span class="font-sans Manrope text-[10px] font-semibold uppercase tracking-widest mt-1">Play</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 px-5 py-2 hover:text-emerald-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="table_bar">table_bar</span>
+<span class="font-sans Manrope text-[10px] font-semibold uppercase tracking-widest mt-1">Tables</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 px-5 py-2 hover:text-emerald-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-sans Manrope text-[10px] font-semibold uppercase tracking-widest mt-1">History</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 px-5 py-2 hover:text-emerald-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+<span class="font-sans Manrope text-[10px] font-semibold uppercase tracking-widest mt-1">Salon</span>
+</div>
+</nav>
+<!-- Background Decoration -->
+<div class="fixed inset-0 pointer-events-none z-[-1] opacity-30">
+<img class="w-full h-full object-cover" data-alt="Primer plano de textura de fieltro verde de mesa de casino de alta gama con sutiles variaciones de sombra e iluminación dramática" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8_8T255AMwHToyRzSC1iB8ZxErX56FnyAsluLoWLp8dRI64CzMyfHznaTrVWurxLA9u94OdaVvnSsEU22ZQz8NJiY1Lfyimj92zIPuDClKB748c_5HlrmUHN0eSKcHhN2ejtYbwYdvFZ_vDprKNoVroIro9yjBFeIAINL943UjOKYdUFoAli3RWihIkOx64vo883ZYS8iUJacrklIXuQzQ79rZYGWkzyb4oEbYTdyV-Zl9RFZ_uUAJ0gQC92CwhY0GR28UQmPRK-D"/>
+</div>
+</body></html>
