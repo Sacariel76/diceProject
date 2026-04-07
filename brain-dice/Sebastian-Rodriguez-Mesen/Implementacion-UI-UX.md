@@ -17,6 +17,16 @@ status: active
 > [!info] Responsable
 > Sebastian Rodriguez Mesen (`SebastianRodMes`)
 
+## Navegacion del modulo
+
+- [[Modulos-UI-UX]]
+- [[Prompts-Stitch-UI-UX]]
+- [[Planeacion-Implementacion-Flutter]]
+- [[Checklist-UI-por-Pantalla]]
+
+> [!note] Enfoque recomendado
+> El diseno en Stitch se trabaja por modulo para iterar mas rapido y reducir retrabajo.
+
 ## Objetivo del modulo
 
 Disenar y llevar a implementacion las pantallas y componentes del juego usando Stitch como base visual, asegurando consistencia y claridad de flujo en mobile y web.
