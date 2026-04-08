@@ -28,6 +28,8 @@ repo: https://github.com/Sacariel76/diceProject.git
 
 - [[Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic]]
 - [[Sebastian-Rodriguez-Mesen/Implementacion-UI-UX]]
+- [[Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter]]
+- [[Sebastian-Rodriguez-Mesen/Checklist-UI-por-Pantalla]]
 - [[Samiel-Marin-Cambronero/Implementacion-WebSocket]]
 
 ## Integrantes

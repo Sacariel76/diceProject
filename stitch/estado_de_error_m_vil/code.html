@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;700&amp;family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error-container": "#ffdad6",
+                    "error-container": "#93000a",
+                    "primary-fixed-dim": "#a1d2ab",
+                    "secondary-container": "#ffbf00",
+                    "secondary-fixed-dim": "#fbbc00",
+                    "tertiary-fixed": "#ffdad6",
+                    "secondary": "#ffe2ab",
+                    "on-secondary": "#402d00",
+                    "tertiary-container": "#83000d",
+                    "primary-fixed": "#bdefc6",
+                    "surface-container-highest": "#353535",
+                    "tertiary": "#ffb3ac",
+                    "on-tertiary": "#680008",
+                    "inverse-primary": "#3b6848",
+                    "on-primary-fixed-variant": "#234f32",
+                    "on-tertiary-fixed-variant": "#930010",
+                    "surface-container-lowest": "#0e0e0e",
+                    "surface-tint": "#a1d2ab",
+                    "on-surface": "#e4e2e1",
+                    "error": "#ffb4ab",
+                    "primary-container": "#1a472a",
+                    "on-tertiary-container": "#ff867d",
+                    "surface-container": "#1f2020",
+                    "surface": "#131313",
+                    "on-primary-fixed": "#00210d",
+                    "on-primary-container": "#85b590",
+                    "on-secondary-fixed-variant": "#5c4300",
+                    "on-secondary-container": "#6d5000",
+                    "on-error": "#690005",
+                    "primary": "#a1d2ab",
+                    "surface-variant": "#353535",
+                    "on-primary": "#08381d",
+                    "inverse-surface": "#e4e2e1",
+                    "secondary-fixed": "#ffdfa0",
+                    "on-secondary-fixed": "#261a00",
+                    "on-background": "#e4e2e1",
+                    "outline": "#8b938a",
+                    "surface-dim": "#131313",
+                    "outline-variant": "#414942",
+                    "surface-bright": "#393939",
+                    "surface-container-high": "#2a2a2a",
+                    "on-tertiary-fixed": "#410003",
+                    "surface-container-low": "#1b1c1c",
+                    "tertiary-fixed-dim": "#ffb3ac",
+                    "inverse-on-surface": "#303030",
+                    "background": "#131313",
+                    "on-surface-variant": "#c1c9bf"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Newsreader"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .grainy-bg {
+            background-image: radial-gradient(circle at center, #1a472a 0%, #131313 100%);
+        }
+        .dice-glass {
+            background: rgba(31, 32, 32, 0.8);
+            backdrop-filter: blur(16px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary min-h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-[#131313] dark:bg-[#131313] flex items-center justify-between px-6 h-16 w-full z-50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a sophisticated person in elegant attire with soft studio lighting and dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSMInC4RQ4C6iX3JWvjHZEKUfFVehezj9P-aEWDKNXGZu-k3-OobhhYLSQnqS0XHe5Mikr7Pjvfl_idC2AybW2F3pjgqczWTsJFEgTgrjUicz-6YnMXR02Xez6I_Z4cq_QdZTfh4EG9A3mKsuxGD38tzE_S0UZwrChM5teSK84YrJcHgSC2l9lag0WLMxTwWWs_Y6x2F2AEDtiOO2lUunEHO8Uy8s1bf1d7wuz2cIYiDPTBgjIm-e7N7iD8fk7DTzhsSGQ4iyHRZ51"/>
+</div>
+<span class="text-2xl font-bold font-['Newsreader'] text-[#a1d2ab] tracking-tight">Dado Triple</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#a1d2ab] active:scale-95 transition-transform cursor-pointer" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+</div>
+</header>
+<!-- Main Canvas: Error State -->
+<main class="relative h-screen w-full flex flex-center items-center justify-center pt-16 px-6 grainy-bg">
+<!-- Background Decorative Element (The Table) -->
+<div class="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center overflow-hidden">
+<div class="w-[150%] aspect-square rounded-full border border-primary/20 scale-150"></div>
+<div class="absolute w-[80%] aspect-square rounded-full border border-primary/10"></div>
+</div>
+<div class="relative z-10 max-w-lg w-full text-center">
+<!-- Dice Icon with Warning Accent -->
+<div class="mb-12 flex justify-center relative">
+<div class="relative">
+<div class="w-24 h-24 bg-surface-container-highest rounded-xl flex items-center justify-center transform -rotate-12 shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
+<span class="material-symbols-outlined text-4xl text-on-secondary-container" data-icon="casino">casino</span>
+</div>
+<div class="absolute -top-4 -right-4 w-12 h-12 bg-secondary-container rounded-full flex items-center justify-center shadow-lg border-4 border-surface ring-2 ring-secondary-container/20">
+<span class="material-symbols-outlined text-on-secondary-container font-bold" data-icon="wifi_off">wifi_off</span>
+</div>
+</div>
+</div>
+<!-- Content Area -->
+<div class="space-y-6">
+<h1 class="font-headline text-5xl text-primary leading-tight">Error de Conexión</h1>
+<p class="font-body text-on-surface-variant text-lg leading-relaxed px-4">
+                    La mesa ha perdido la señal. Tus apuestas están seguras, pero necesitamos reconectar para continuar la partida en el Salón.
+                </p>
+<div class="pt-8 flex flex-col items-center gap-4">
+<!-- Retry Button -->
+<button class="bg-primary text-on-primary px-10 py-4 rounded-xl font-bold tracking-wide active:scale-90 duration-200 transition-all shadow-xl hover:bg-primary-fixed-dim min-w-[220px]">
+                        Reintentar
+                    </button>
+<!-- Secondary Action -->
+<button class="text-outline font-label uppercase tracking-widest text-xs hover:text-on-surface transition-colors">
+                        Ver Estado del Servidor
+                    </button>
+</div>
+</div>
+<!-- Error Code / Tonal Shift Element -->
+<div class="mt-16 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-error-container/20 border border-error-container/30">
+<div class="w-2 h-2 rounded-full bg-secondary-container shadow-[0_0_10px_#ffbf00]"></div>
+<span class="font-label text-[10px] uppercase tracking-widest text-secondary">Estado: Sincronizando mesa...</span>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Suppressed due to Task-Focused/Error screen logic, but placeholder as per shell requirements if it were a top-level dest) -->
+<!-- Suppression logic applied: This is a Task-Focused (Error) sub-page, BottomNavBar is excluded to prioritize the focus on recovery -->
+<!-- Ambient Shadow Layers -->
+<div class="fixed inset-0 pointer-events-none shadow-[inset_0_0_200px_rgba(0,0,0,0.6)]"></div>
+</body></html>

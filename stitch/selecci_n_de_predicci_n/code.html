@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,700&amp;family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#131313",
+                        "tertiary": "#ffb3ac",
+                        "surface-tint": "#a1d2ab",
+                        "secondary-container": "#ffbf00",
+                        "on-secondary-fixed-variant": "#5c4300",
+                        "on-surface": "#e4e2e1",
+                        "surface-container-high": "#2a2a2a",
+                        "error": "#ffb4ab",
+                        "secondary-fixed": "#ffdfa0",
+                        "on-background": "#e4e2e1",
+                        "secondary-fixed-dim": "#fbbc00",
+                        "surface-bright": "#393939",
+                        "on-error": "#690005",
+                        "surface-container-highest": "#353535",
+                        "surface-container": "#1f2020",
+                        "on-secondary-container": "#6d5000",
+                        "on-secondary-fixed": "#261a00",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-container": "#ff867d",
+                        "on-tertiary-fixed-variant": "#930010",
+                        "on-surface-variant": "#c1c9bf",
+                        "on-tertiary-fixed": "#410003",
+                        "inverse-on-surface": "#303030",
+                        "outline-variant": "#414942",
+                        "outline": "#8b938a",
+                        "surface-container-low": "#1b1c1c",
+                        "secondary": "#ffe2ab",
+                        "primary-fixed-dim": "#a1d2ab",
+                        "on-primary-fixed": "#00210d",
+                        "surface": "#131313",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-primary-container": "#85b590",
+                        "inverse-primary": "#3b6848",
+                        "tertiary-container": "#83000d",
+                        "primary": "#a1d2ab",
+                        "tertiary-fixed": "#ffdad6",
+                        "background": "#131313",
+                        "on-primary-fixed-variant": "#234f32",
+                        "on-primary": "#08381d",
+                        "error-container": "#93000a",
+                        "on-secondary": "#402d00",
+                        "primary-fixed": "#bdefc6",
+                        "tertiary-fixed-dim": "#ffb3ac",
+                        "inverse-surface": "#e4e2e1",
+                        "surface-variant": "#353535",
+                        "primary-container": "#1a472a",
+                        "on-tertiary": "#680008"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Newsreader"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .felt-texture {
+            background-image: radial-gradient(circle at center, #1a472a 0%, #131313 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 1px rgba(255,255,255,0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/30">
+<!-- Top Navigation Anchor -->
+<header class="fixed top-0 w-full z-50 bg-[#131313] dark:bg-[#131313] flex items-center justify-between px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#a1d2ab] cursor-pointer active:opacity-70">menu</span>
+</div>
+<h1 class="font-['Newsreader'] tracking-tight text-2xl font-bold text-[#a1d2ab] tracking-widest uppercase">THE GRAND SALON</h1>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/20">
+<img alt="Player Profile" data-alt="high-quality digital avatar of a sophisticated person in a tuxedo, minimalist clean background, soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU_GHmT0IpLZgM9WlObiDrQUe5fDPNYHgliZoKGaZnDfNKO4KiunE2ivtgiwbihV6phOJdd_s-z_Xl3SYXpnmPYm4wY3J4WZ-0rz5D5_NzpuNEjwfrQbJ_KzJ4p2bgcgdrL3MrOtL_4C6S3pd8Z6RC2nGRzAfF3wr7hikPNKZ0l9b4HCGz6oGdEwLiUKR-clYQTcEB4E2XRha3eIdoM76mkkLG59GlBklkqh-mpRqRVoT1qbi65hsXfPn9_d95u9-OJJ1B4tIyzrBd"/>
+</div>
+<div class="absolute bottom-0 left-0 bg-gradient-to-b from-[#1a472a] to-transparent h-1 w-full"></div>
+</header>
+<main class="min-h-screen pt-24 pb-32 px-6 felt-texture flex flex-col items-center">
+<!-- Phase Header -->
+<div class="text-center mb-10 mt-4">
+<span class="font-label text-[10px] tracking-[0.3em] text-secondary uppercase mb-2 block">SALA DE JUEGO • DADO TRIPLE</span>
+<h2 class="font-headline text-4xl md:text-5xl text-on-surface mb-2">FASE DE PREDICCIÓN</h2>
+<p class="text-on-surface-variant font-body text-sm max-w-xs mx-auto opacity-80">Seleccione su destino en el tapete. El riesgo define la recompensa.</p>
+</div>
+<!-- Prediction Cards Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+<!-- Card: Zero (Selected State Example) -->
+<button class="group relative flex flex-col items-start p-6 bg-primary-container border-2 border-secondary-container/50 rounded-xl card-shadow transition-all duration-300 scale-[1.02] text-left">
+<div class="absolute top-4 right-4">
+<span class="material-symbols-outlined text-secondary-container" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<span class="font-headline text-3xl text-primary mb-1">Zero</span>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed mb-8">Predice que la suma será 0 (riesgo alto)</p>
+<div class="mt-auto flex items-center gap-2">
+<span class="font-label text-[10px] uppercase tracking-widest text-secondary-container bg-on-secondary-container/20 px-2 py-1 rounded">X50 MULTIPLIER</span>
+</div>
+</button>
+<!-- Card: Min -->
+<button class="group relative flex flex-col items-start p-6 bg-surface-container-low hover:bg-surface-container-high rounded-xl card-shadow transition-all duration-300 hover:-translate-y-1 text-left">
+<div class="absolute top-4 right-4 opacity-20 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-outline">check_circle</span>
+</div>
+<span class="font-headline text-3xl text-on-surface mb-1">Min</span>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed mb-8">Suma total entre 1 y 10</p>
+<div class="mt-auto flex items-center gap-2">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline bg-surface-container-highest px-2 py-1 rounded">X2 MULTIPLIER</span>
+</div>
+</button>
+<!-- Card: More -->
+<button class="group relative flex flex-col items-start p-6 bg-surface-container-low hover:bg-surface-container-high rounded-xl card-shadow transition-all duration-300 hover:-translate-y-1 text-left">
+<div class="absolute top-4 right-4 opacity-20 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-outline">check_circle</span>
+</div>
+<span class="font-headline text-3xl text-on-surface mb-1">More</span>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed mb-8">Suma total entre 11 y 20</p>
+<div class="mt-auto flex items-center gap-2">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline bg-surface-container-highest px-2 py-1 rounded">X2 MULTIPLIER</span>
+</div>
+</button>
+<!-- Card: Max -->
+<button class="group relative flex flex-col items-start p-6 bg-surface-container-low hover:bg-surface-container-high rounded-xl card-shadow transition-all duration-300 hover:-translate-y-1 text-left">
+<div class="absolute top-4 right-4 opacity-20 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-outline">check_circle</span>
+</div>
+<span class="font-headline text-3xl text-on-surface mb-1">Max</span>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed mb-8">Suma total mayor a 21</p>
+<div class="mt-auto flex items-center gap-2">
+<span class="font-label text-[10px] uppercase tracking-widest text-outline bg-surface-container-highest px-2 py-1 rounded">X5 MULTIPLIER</span>
+</div>
+</button>
+</div>
+<!-- Action Button Section -->
+<div class="mt-12 w-full max-w-md">
+<button class="w-full py-4 px-8 bg-primary text-on-primary font-body font-bold text-sm tracking-[0.2em] rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
+                ENVIAR PREDICCIÓN
+                <span class="material-symbols-outlined text-lg">send</span>
+</button>
+<!-- Contextual Note -->
+<p class="mt-4 text-center text-[10px] text-outline font-label uppercase tracking-widest">
+                La apuesta actual quedará bloqueada al confirmar
+            </p>
+</div>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="fixed bottom-0 left-0 w-full h-20 bg-[#131313]/80 backdrop-blur-md flex justify-around items-center px-4 pb-safe z-50 border-t border-[#414942]/20 shadow-[0_-10px_30px_rgba(26,71,42,0.2)] rounded-t-xl">
+<div class="flex flex-col items-center justify-center text-[#353535] px-4 py-2 cursor-pointer transition-transform scale-95 active:scale-90 hover:text-[#a1d2ab]/80">
+<span class="material-symbols-outlined mb-1">casino</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Table</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#a1d2ab] bg-[#1a472a] rounded-xl px-4 py-2 cursor-pointer transition-transform scale-95 active:scale-90">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">style</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Hand</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#353535] px-4 py-2 cursor-pointer transition-transform scale-95 active:scale-90 hover:text-[#a1d2ab]/80">
+<span class="material-symbols-outlined mb-1">leaderboard</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Stats</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#353535] px-4 py-2 cursor-pointer transition-transform scale-95 active:scale-90 hover:text-[#a1d2ab]/80">
+<span class="material-symbols-outlined mb-1">menu_book</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Rules</span>
+</div>
+</nav>
+</body></html>
