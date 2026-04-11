@@ -3,29 +3,32 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketService {
   WebSocketChannel? _channel;
+  String? _lastError;
 
   final String _serverUrl = 'ws://34.232.89.243:5000';
 
   bool get isConnected => _channel != null;
+  String? get lastError => _lastError;
 
   void connect() {
     try {
       _channel = WebSocketChannel.connect(Uri.parse(_serverUrl));
-      print('Conectando al servidor...');
+      _lastError = null;
     } catch (e) {
-      print('Error de conexión: $e');
+      _lastError = 'No se pudo conectar al servidor: $e';
     }
   }
 
   Stream<Map<String, dynamic>>? get messagesStream {
     return _channel?.stream.map((message) {
       try {
+        _lastError = null;
         return jsonDecode(message) as Map<String, dynamic>;
       } catch (e) {
-        print('Error al decodificar mensaje: $e');
+        _lastError = 'Error al decodificar mensaje: $e';
         return {
-          "type": "error",
-          "message": "Mensaje inválido recibido del servidor"
+          'type': 'error',
+          'message': 'Mensaje invalido recibido del servidor',
         };
       }
     });
@@ -33,16 +36,16 @@ class WebSocketService {
 
   void sendMessage(Map<String, dynamic> data) {
     if (_channel == null) {
-      print('No hay conexión activa');
+      _lastError = 'No hay conexion activa';
       return;
     }
 
     try {
       final jsonString = jsonEncode(data);
       _channel!.sink.add(jsonString);
-      print('Enviado: $jsonString');
+      _lastError = null;
     } catch (e) {
-      print('Error al enviar mensaje: $e');
+      _lastError = 'Error al enviar mensaje: $e';
     }
   }
 
@@ -50,9 +53,9 @@ class WebSocketService {
     try {
       _channel?.sink.close();
       _channel = null;
-      print('Sesión cerrada');
+      _lastError = null;
     } catch (e) {
-      print('Error al cerrar conexión: $e');
+      _lastError = 'Error al cerrar conexion: $e';
     }
   }
 }
