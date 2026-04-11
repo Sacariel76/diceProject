@@ -1,112 +1,39 @@
 import 'package:flutter/material.dart';
-import 'services/websocket_service.dart';
+import 'package:provider/provider.dart';
+import 'app/app_theme.dart';
+import 'app/router.dart';
+import 'state/game_provider.dart';
+import 'widgets/common/realtime_status_overlay.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(create: (_) => GameProvider(), child: const App()),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Test WebSocket',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const TestSocketScreen(),
-    );
-  }
-}
-
-class TestSocketScreen extends StatefulWidget {
-  const TestSocketScreen({super.key});
-
-  @override
-  State<TestSocketScreen> createState() => _TestSocketScreenState();
-}
-
-class _TestSocketScreenState extends State<TestSocketScreen> {
-  final WebSocketService socketService = WebSocketService();
-  String log = '--- LOG ---\n';
-
-  @override
-  void initState() {
-    super.initState();
-
-    // 🔌 Conectar al iniciar
-    socketService.connect();
-
-    // 👂 Escuchar mensajes del servidor
-    socketService.messagesStream?.listen((data) {
-      setState(() {
-        log += '\n$data';
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    socketService.disconnect();
-    super.dispose();
-  }
-
-  // 🚀 Crear sala
-  void crearSala() {
-    socketService.sendMessage({
-      "type": "create_room",
-      "player_name": "Carlitos"
-    });
-  }
-
-  // 👥 Unirse a sala (opcional prueba)
-  void unirseSala() {
-    socketService.sendMessage({
-      "type": "join_room",
-      "player_name": "Carlitos",
-      "room_code": "ABC123" // cambia por uno real
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Prueba WebSocket AWS'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return MaterialApp.router(
+      title: 'Dado Triple',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.dark,
+      routerConfig: appRouter,
+      builder: (context, child) {
+        return Stack(
           children: [
-            ElevatedButton(
-              onPressed: crearSala,
-              child: const Text('Crear sala'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: unirseSala,
-              child: const Text('Unirse a sala'),
-            ),
-            const SizedBox(height: 20),
-
-            // 🧾 Consola de mensajes
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                color: Colors.black,
-                child: SingleChildScrollView(
-                  child: Text(
-                    log,
-                    style: const TextStyle(color: Colors.green),
-                  ),
-                ),
-              ),
+            child ?? const SizedBox.shrink(),
+            RealtimeStatusOverlay(
+              onExitSession: () {
+                context.read<GameProvider>().dismissCriticalDisconnect();
+                appRouter.go('/home');
+              },
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }

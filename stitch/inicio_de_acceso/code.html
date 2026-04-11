@@ -1,0 +1,197 @@
+<html class="dark"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&amp;family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-secondary-container": "#6d5000",
+                  "surface-tint": "#a1d2ab",
+                  "outline-variant": "#414942",
+                  "secondary-fixed": "#ffdfa0",
+                  "on-secondary-fixed": "#261a00",
+                  "surface-dim": "#131313",
+                  "error": "#ffb4ab",
+                  "surface": "#131313",
+                  "secondary": "#ffe2ab",
+                  "inverse-primary": "#3b6848",
+                  "on-secondary-fixed-variant": "#5c4300",
+                  "on-surface-variant": "#c1c9bf",
+                  "background": "#131313",
+                  "surface-variant": "#353535",
+                  "surface-container-low": "#1b1c1c",
+                  "on-error": "#690005",
+                  "tertiary": "#ffb3ac",
+                  "primary-fixed-dim": "#a1d2ab",
+                  "on-primary-fixed": "#00210d",
+                  "on-primary": "#08381d",
+                  "surface-bright": "#393939",
+                  "surface-container-highest": "#353535",
+                  "on-tertiary-fixed": "#410003",
+                  "tertiary-container": "#83000d",
+                  "on-surface": "#e4e2e1",
+                  "on-secondary": "#402d00",
+                  "surface-container-high": "#2a2a2a",
+                  "outline": "#8b938a",
+                  "inverse-on-surface": "#303030",
+                  "primary-fixed": "#bdefc6",
+                  "on-tertiary-fixed-variant": "#930010",
+                  "secondary-fixed-dim": "#fbbc00",
+                  "surface-container-lowest": "#0e0e0e",
+                  "on-tertiary-container": "#ff867d",
+                  "primary": "#a1d2ab",
+                  "on-error-container": "#ffdad6",
+                  "tertiary-fixed-dim": "#ffb3ac",
+                  "on-primary-fixed-variant": "#234f32",
+                  "on-primary-container": "#85b590",
+                  "tertiary-fixed": "#ffdad6",
+                  "inverse-surface": "#e4e2e1",
+                  "surface-container": "#1f2020",
+                  "primary-container": "#1a472a",
+                  "on-background": "#e4e2e1",
+                  "error-container": "#93000a",
+                  "on-tertiary": "#680008",
+                  "secondary-container": "#ffbf00"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.125rem",
+                  "lg": "0.25rem",
+                  "xl": "0.5rem",
+                  "full": "0.75rem"
+          },
+          "fontFamily": {
+                  "headline": ["Newsreader"],
+                  "body": ["Manrope"],
+                  "label": ["Manrope"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #131313;
+      color: #e4e2e1;
+      font-family: 'Manrope', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .ivory-gradient {
+      background: radial-gradient(circle at center, #a1d2ab 0%, #1a472a 100%);
+    }
+    .glass-effect {
+      background: rgba(31, 32, 32, 0.8);
+      backdrop-filter: blur(16px);
+    }
+    .table-felt {
+      background: radial-gradient(circle at top, #1a472a 0%, #131313 80%);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col overflow-x-hidden table-felt">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-[#131313] dark:bg-[#131313] flex items-center justify-between px-6 h-16 w-full z-50 shadow-none">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="Player Profile" data-alt="close-up portrait of a sophisticated person in a tuxedo, soft cinematic lighting, dark luxury background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyUDkOhdUp8iR50HxYiMsjdhtjZZGJqy62AZdK38QYe1dP53q_8-XsOPh1RlEyraZ5WtKXZ55soRTpJmebz2d5DaDFgb2cFAb8ud_h7MVRwWdLtsmeTgDY0o9WEbx6BFRmW9rNgN2CWrj2sHHDz8Ia-5-F9WnJcOpDXJL20vExtAXsRqGzzx70S-vxAYlb0hFJb4GE0pWE1x3-PU8iJSzVWLSTSTESCBhgtpqYYI7DWNfGxItSXfV1t02WvPy5OS9c56p414tV0FOH"/>
+</div>
+<span class="text-2xl font-bold font-['Newsreader'] text-[#a1d2ab] tracking-tight">Dado Triple</span>
+</div>
+<button class="text-[#a1d2ab] active:scale-95 transition-transform hover:bg-white/5 transition-colors p-2 rounded-lg">
+<span class="material-symbols-outlined">signal_cellular_alt</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-6 py-20 mt-16 max-w-lg mx-auto w-full">
+<!-- Hero Section -->
+<div class="text-center mb-12">
+<h1 class="text-5xl md:text-6xl font-['Newsreader'] font-bold text-on-primary-container leading-tight mb-4 italic tracking-tight">
+        Bienvenido al Salón
+      </h1>
+<p class="font-['Manrope'] text-outline text-sm uppercase tracking-[0.2em]">
+        Toma tu asiento en la mesa de honor
+      </p>
+</div>
+<!-- Interactive Cards Grid (Asymmetric Layout) -->
+<div class="grid grid-cols-1 gap-6 w-full">
+<!-- Create Room Card -->
+<button class="group relative flex flex-col items-start p-8 rounded-xl bg-surface-container-low border border-outline-variant/10 hover:bg-surface-container transition-all duration-300 active:scale-95 text-left overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl" style="font-variation-settings: 'FILL' 1;">casino</span>
+</div>
+<div class="w-12 h-12 mb-6 rounded-xl bg-primary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">crown</span>
+</div>
+<h2 class="font-['Newsreader'] text-3xl font-semibold text-primary mb-2">Crear Sala</h2>
+<p class="text-outline text-sm max-w-[240px]">Inicia un nuevo juego y conviértete en el Croupier de la noche.</p>
+<div class="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary-container">
+          Configurar Mesa
+          <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</div>
+</button>
+<!-- Join Room Card -->
+<button class="group relative flex flex-col items-start p-8 rounded-xl bg-surface-container-highest border border-outline-variant/20 hover:bg-surface-bright transition-all duration-300 active:scale-95 text-left overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl" style="font-variation-settings: 'FILL' 1;">key</span>
+</div>
+<div class="w-12 h-12 mb-6 rounded-xl bg-surface-container-low flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl">group</span>
+</div>
+<h2 class="font-['Newsreader'] text-3xl font-semibold text-on-surface mb-2">Unirse a Sala</h2>
+<p class="text-outline text-sm max-w-[240px]">Ingresa un código de acceso y entra en una partida activa.</p>
+<div class="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
+          Entrar Ahora
+          <span class="material-symbols-outlined text-sm">login</span>
+</div>
+</button>
+</div>
+<!-- Secondary Invitation -->
+<div class="mt-12 text-center">
+<div class="flex items-center justify-center gap-4 mb-6">
+<div class="h-px w-8 bg-outline-variant/30"></div>
+<span class="text-outline-variant text-[10px] uppercase tracking-[0.3em]">Ambiente Privado</span>
+<div class="h-px w-8 bg-outline-variant/30"></div>
+</div>
+<p class="text-on-surface-variant font-['Manrope'] text-sm leading-relaxed italic opacity-80">
+        "Donde la estrategia se encuentra con la fortuna bajo el verde de la mesa."
+      </p>
+</div>
+</main>
+<!-- BottomNavBar (Suppressed for focused entry, showing simplified version as per request) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center pb-6 pt-2 px-4 bg-[#131313]/80 backdrop-blur-lg border-t border-[#414942]/20 shadow-[0_-10px_30px_rgba(0,0,0,0.4)] md:hidden">
+<!-- Home Active -->
+<a class="flex flex-col items-center justify-center bg-[#1a472a] text-[#a1d2ab] rounded-xl px-6 py-2 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-['Manrope'] text-[10px] uppercase tracking-widest mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#353535] px-6 py-2 hover:text-[#a1d2ab] transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">casino</span>
+<span class="font-['Manrope'] text-[10px] uppercase tracking-widest mt-1">Games</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#353535] px-6 py-2 hover:text-[#a1d2ab] transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-['Manrope'] text-[10px] uppercase tracking-widest mt-1">Rankings</span>
+</a>
+</nav>
+<!-- Decorative Grain Texture -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay">
+<svg viewbox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<filter id="noiseFilter">
+<feturbulence basefrequency="0.65" numoctaves="3" stitchtiles="stitch" type="fractalNoise"></feturbulence>
+</filter>
+<rect filter="url(#noiseFilter)" height="100%" width="100%"></rect>
+</svg>
+</div>
+</body></html>

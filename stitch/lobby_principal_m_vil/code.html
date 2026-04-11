@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error-container": "#ffdad6",
+                    "error-container": "#93000a",
+                    "primary-fixed-dim": "#a1d2ab",
+                    "secondary-container": "#ffbf00",
+                    "secondary-fixed-dim": "#fbbc00",
+                    "tertiary-fixed": "#ffdad6",
+                    "secondary": "#ffe2ab",
+                    "on-secondary": "#402d00",
+                    "tertiary-container": "#83000d",
+                    "primary-fixed": "#bdefc6",
+                    "surface-container-highest": "#353535",
+                    "tertiary": "#ffb3ac",
+                    "on-tertiary": "#680008",
+                    "inverse-primary": "#3b6848",
+                    "on-primary-fixed-variant": "#234f32",
+                    "on-tertiary-fixed-variant": "#930010",
+                    "surface-container-lowest": "#0e0e0e",
+                    "surface-tint": "#a1d2ab",
+                    "on-surface": "#e4e2e1",
+                    "error": "#ffb4ab",
+                    "primary-container": "#1a472a",
+                    "on-tertiary-container": "#ff867d",
+                    "surface-container": "#1f2020",
+                    "surface": "#131313",
+                    "on-primary-fixed": "#00210d",
+                    "on-primary-container": "#85b590",
+                    "on-secondary-fixed-variant": "#5c4300",
+                    "on-secondary-container": "#6d5000",
+                    "on-error": "#690005",
+                    "primary": "#a1d2ab",
+                    "surface-variant": "#353535",
+                    "on-primary": "#08381d",
+                    "inverse-surface": "#e4e2e1",
+                    "secondary-fixed": "#ffdfa0",
+                    "on-secondary-fixed": "#261a00",
+                    "on-background": "#e4e2e1",
+                    "outline": "#8b938a",
+                    "surface-dim": "#131313",
+                    "outline-variant": "#414942",
+                    "surface-bright": "#393939",
+                    "surface-container-high": "#2a2a2a",
+                    "on-tertiary-fixed": "#410003",
+                    "surface-container-low": "#1b1c1c",
+                    "tertiary-fixed-dim": "#ffb3ac",
+                    "inverse-on-surface": "#303030",
+                    "background": "#131313",
+                    "on-surface-variant": "#c1c9bf"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Newsreader"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body text-on-surface antialiased bg-surface min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-[#131313] dark:bg-[#131313] z-50 flex items-center justify-between px-6 h-16 shadow-none">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20">
+<img alt="Player Profile" data-alt="professional portrait of a sophisticated man with a stylish beard and modern glasses in warm studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhthPINl9jZ6tAFtMoqTK6K9JbKiYPLs4wtCSgMNwOUxB-Iv3os6kf6GfdZJzEUbNFxpeDjH_tZhavE9GI3cdYBuASa8JVegvqKIZs_uSrIkUYJtpt5IoNpYyXith5tpFKxBNY9yUOa_1JDNg_fmKWbXy0s3RKNLNhkMwdhUqSlFFXCxXdbGyY01WXU_zSAsh47eGuFZYn5QwPHzWOtupxQqtDfFsMvQSqRrrrbrNMUak6FmnKHkrpfDkJR6lwVQJRg9pWMhzmXxmM"/>
+</div>
+<span class="text-2xl font-bold font-['Newsreader'] text-[#a1d2ab] tracking-tight">Dado Triple</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-white/5 transition-colors p-2 rounded-lg active:scale-95 transition-transform text-[#a1d2ab]">
+<span class="material-symbols-outlined" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+</button>
+</div>
+</header>
+<main class="pt-20 pb-32 px-6 max-w-2xl mx-auto space-y-8">
+<!-- Connection Banner -->
+<div class="flex items-center justify-center py-2 px-4 bg-primary-container/30 backdrop-blur-md rounded-full border border-primary/10 mx-auto w-fit">
+<span class="w-2 h-2 rounded-full bg-secondary-container shadow-[0_0_8px_rgba(255,191,0,0.6)] mr-3"></span>
+<span class="text-[10px] font-label uppercase tracking-widest text-primary font-bold">Conectado</span>
+</div>
+<!-- Player Stats Summary (Bento-style layout) -->
+<section class="grid grid-cols-2 gap-4">
+<div class="col-span-2 bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+<p class="text-label text-outline text-xs uppercase tracking-widest mb-1">Tu Rango</p>
+<h2 class="text-headline text-3xl font-headline text-primary">Gran Maestro</h2>
+<div class="mt-4 flex items-center gap-2">
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container w-[75%] shadow-[0_0_10px_rgba(255,191,0,0.3)]"></div>
+</div>
+<span class="text-[10px] text-secondary font-bold">2,450 XP</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-5 rounded-xl border border-outline-variant/10">
+<span class="material-symbols-outlined text-secondary text-xl mb-2" data-icon="stars">stars</span>
+<p class="text-headline text-2xl font-headline text-on-surface">12</p>
+<p class="text-label text-outline text-[10px] uppercase tracking-widest">Victorias hoy</p>
+</div>
+<div class="bg-surface-container-low p-5 rounded-xl border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary text-xl mb-2" data-icon="account_balance_wallet">account_balance_wallet</span>
+<p class="text-headline text-2xl font-headline text-on-surface">5,280</p>
+<p class="text-label text-outline text-[10px] uppercase tracking-widest">Créditos</p>
+</div>
+</section>
+<!-- Active Games Section -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="text-headline text-xl font-headline italic">Partidas Activas</h3>
+<button class="text-primary text-xs font-label uppercase tracking-widest border-b border-primary/20 pb-0.5">Ver todo</button>
+</div>
+<!-- Game Cards -->
+<div class="space-y-4">
+<!-- Card 1 -->
+<div class="bg-surface-container-low p-1 rounded-xl group transition-all">
+<div class="bg-primary-container/40 p-5 rounded-lg border border-outline-variant/10 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-highest rounded-lg flex items-center justify-center relative">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-2xl" data-icon="casino">casino</span>
+<span class="absolute -top-1 -right-1 flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
+</span>
+</div>
+<div>
+<h4 class="font-headline text-lg text-on-surface">Mesa de Élite #04</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">3/4 Jugadores</span>
+<span class="w-1 h-1 bg-outline/40 rounded-full"></span>
+<span class="text-[10px] font-label text-secondary uppercase tracking-tighter font-bold">Apuesta: 500</span>
+</div>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-5 py-2 rounded-full font-label text-xs font-bold uppercase tracking-widest active:scale-95 transition-transform">
+                            Unirse
+                        </button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-low p-1 rounded-xl">
+<div class="bg-surface-container-high/40 p-5 rounded-lg border border-outline-variant/10 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-highest rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary/60 text-2xl" data-icon="groups">groups</span>
+</div>
+<div>
+<h4 class="font-headline text-lg text-on-surface">Sala de Práctica</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">1/4 Jugadores</span>
+<span class="w-1 h-1 bg-outline/40 rounded-full"></span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Gratis</span>
+</div>
+</div>
+</div>
+<button class="bg-surface-container-highest text-on-surface-variant px-5 py-2 rounded-full font-label text-xs font-bold uppercase tracking-widest hover:bg-surface-bright active:scale-95 transition-all">
+                            Unirse
+                        </button>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-low p-1 rounded-xl">
+<div class="bg-surface-container-high/40 p-5 rounded-lg border border-outline-variant/10 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-highest rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary/60 text-2xl" data-icon="lock">lock</span>
+</div>
+<div>
+<h4 class="font-headline text-lg text-on-surface">Club Privado</h4>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">2/4 Jugadores</span>
+<span class="w-1 h-1 bg-outline/40 rounded-full"></span>
+<span class="text-[10px] font-label text-secondary uppercase tracking-tighter font-bold">Apuesta: 2000</span>
+</div>
+</div>
+</div>
+<button class="bg-surface-container-highest text-on-surface-variant px-5 py-2 rounded-full font-label text-xs font-bold uppercase tracking-widest active:scale-95 transition-all">
+                            Privada
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- New Game FAB -->
+<div class="fixed bottom-24 right-6">
+<button class="w-14 h-14 bg-secondary-container text-on-secondary-container rounded-xl shadow-[0_10px_25px_rgba(255,191,0,0.4)] flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-3xl font-bold" data-icon="add">add</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center pb-6 pt-2 px-4 bg-[#131313]/80 backdrop-blur-lg border-t border-[#414942]/20 shadow-[0_-10px_30px_rgba(0,0,0,0.4)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center bg-[#1a472a] text-[#a1d2ab] rounded-xl px-6 py-2 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-['Manrope'] text-[10px] uppercase tracking-widest">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#353535] px-6 py-2 hover:text-[#a1d2ab] transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="casino">casino</span>
+<span class="font-['Manrope'] text-[10px] uppercase tracking-widest">Games</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#353535] px-6 py-2 hover:text-[#a1d2ab] transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="leaderboard">leaderboard</span>
+<span class="font-['Manrope'] text-[10px] uppercase tracking-widest">Rankings</span>
+</a>
+</nav>
+</body></html>

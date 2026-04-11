@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400&amp;family=Manrope:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-secondary-fixed-variant": "#5c4300",
+            "inverse-on-surface": "#303030",
+            "surface-container-highest": "#353535",
+            "outline": "#8b938a",
+            "on-primary-fixed-variant": "#234f32",
+            "surface": "#131313",
+            "on-tertiary-fixed-variant": "#930010",
+            "secondary-container": "#ffbf00",
+            "on-tertiary": "#680008",
+            "background": "#131313",
+            "surface-variant": "#353535",
+            "inverse-surface": "#e4e2e1",
+            "on-tertiary-container": "#ff867d",
+            "on-primary-fixed": "#00210d",
+            "inverse-primary": "#3b6848",
+            "primary-fixed": "#bdefc6",
+            "surface-container-lowest": "#0e0e0e",
+            "primary-fixed-dim": "#a1d2ab",
+            "on-secondary-fixed": "#261a00",
+            "on-tertiary-fixed": "#410003",
+            "on-surface-variant": "#c1c9bf",
+            "on-surface": "#e4e2e1",
+            "on-primary": "#08381d",
+            "on-error-container": "#ffdad6",
+            "on-error": "#690005",
+            "secondary-fixed-dim": "#fbbc00",
+            "tertiary-container": "#83000d",
+            "error": "#ffb4ab",
+            "surface-bright": "#393939",
+            "outline-variant": "#414942",
+            "surface-dim": "#131313",
+            "surface-container": "#1f2020",
+            "secondary": "#ffe2ab",
+            "on-primary-container": "#85b590",
+            "tertiary": "#ffb3ac",
+            "surface-tint": "#a1d2ab",
+            "on-secondary-container": "#6d5000",
+            "tertiary-fixed-dim": "#ffb3ac",
+            "primary-container": "#1a472a",
+            "secondary-fixed": "#ffdfa0",
+            "error-container": "#93000a",
+            "surface-container-high": "#2a2a2a",
+            "tertiary-fixed": "#ffdad6",
+            "surface-container-low": "#1b1c1c",
+            "primary": "#a1d2ab",
+            "on-secondary": "#402d00",
+            "on-background": "#e4e2e1"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "fontFamily": {
+            "headline": ["Newsreader"],
+            "body": ["Manrope"],
+            "label": ["Manrope"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .felt-gradient {
+      background: radial-gradient(circle at center, #1a472a 0%, #131313 100%);
+    }
+    .glass-effect {
+      backdrop-filter: blur(16px);
+      background-color: rgba(31, 32, 32, 0.8);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body select-none">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 w-full bg-[#131313] bg-gradient-to-b from-[#1a472a] to-transparent">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#a1d2ab] cursor-pointer" data-icon="menu">menu</span>
+<h1 class="font-['Newsreader'] italic text-2xl text-[#a1d2ab]">THE GRAND SALON</h1>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/20">
+<img alt="Player Profile" data-alt="close-up portrait of a sophisticated person in a dark tuxedo with dramatic warm lighting in a high-end lounge" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuEH5XxyivRGsEeQe38A-ZVhePS76bYyCa6X7osk7yXARptebo_Q3wlNzJIVvVNR06rh3TguKFckUkc1ziTTlHaz79IoFtFnFFqdeutTrkNyXIXGljcWd4hbYnv4O1ys9atF-MbLft21GZUC9Th_YULPs6Qegt9-0sn-Y3D833WJCjRTbU518x_I2IC08xsxnmrm3TfNGF7DFHHjMGlBzg1vMJM7iJEFwBqy8Ty8koji7TczDkJA34mmOzLKKX6tmkv7sPjKFVCFXL"/>
+</div>
+</header>
+<!-- Reconnecting Banner -->
+<div class="fixed top-16 left-0 w-full z-40 bg-secondary-container text-on-secondary-container py-2 px-4 flex items-center justify-center gap-2 shadow-lg">
+<span class="material-symbols-outlined text-sm" data-icon="sync_problem">sync_problem</span>
+<span class="font-label text-xs uppercase tracking-widest font-bold">Reconnecting...</span>
+</div>
+<!-- Main Gameplay Canvas (The Table) -->
+<main class="min-h-screen pt-28 pb-32 px-4 felt-gradient flex flex-col items-center">
+<!-- Dealer / Center Area -->
+<div class="w-full max-w-md flex flex-col items-center mb-8">
+<div class="w-24 h-24 rounded-full border-4 border-primary/20 flex items-center justify-center bg-surface-container-lowest/50 mb-4 overflow-hidden">
+<img alt="Grand Croupier" class="w-full h-full object-cover opacity-80" data-alt="extreme close-up of a croupier's hands in white gloves dealing cards on a rich green felt table with gold accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDF0E_keGDZjP4M4ENxw_ecTo6zv4xkjsXViiWnOxPPBaaEnGQlvcI3txOVAF5dwlCpCrf_Gl9FtwyfgntEoq_gBT3ZRIN06MuBqGCRnP_bRF-oqQnT88lrDlEHJ_j2BR-zg_P-KuUuyXmJGSJTebANg7vKuRQ7tyONkrqIDcT051_LFzQGjPtZCwJqJ25RfXAi2zCFf-aTUq6m_ax9Wk_OINmw2qLcLSsJjH2fBez21nNIgbORdoqgpHZRNTlvky_Z6vEz5-FMg_Qc"/>
+</div>
+<div class="text-center">
+<h2 class="font-headline text-on-primary-container text-xl italic">The Table is Live</h2>
+<p class="font-label text-outline text-[10px] uppercase tracking-tighter">Private Session • High Stakes</p>
+</div>
+</div>
+<!-- Active Game Elements (Bento Layout) -->
+<div class="grid grid-cols-2 gap-4 w-full max-w-md">
+<!-- Player Card 1 -->
+<div class="col-span-1 bg-surface-container-low p-4 rounded-xl border border-outline-variant/10">
+<div class="flex items-center gap-2 mb-3">
+<div class="w-2 h-2 rounded-full bg-secondary-container shadow-[0_0_8px_rgba(255,191,0,0.6)]"></div>
+<span class="font-label text-[10px] text-on-surface-variant uppercase">Your Turn</span>
+</div>
+<p class="font-headline text-2xl text-on-surface mb-1">24,500</p>
+<p class="font-label text-[10px] text-outline uppercase tracking-widest">Current Stake</p>
+</div>
+<!-- Pot Card -->
+<div class="col-span-1 bg-primary-container/40 p-4 rounded-xl border border-primary/20">
+<span class="font-label text-[10px] text-primary uppercase tracking-widest block mb-3 text-right">Pot Total</span>
+<p class="font-headline text-3xl text-on-primary-container text-right">142,000</p>
+</div>
+<!-- Dice Tray -->
+<div class="col-span-2 bg-surface-container-highest p-6 rounded-xl flex justify-center items-center gap-6 shadow-2xl">
+<!-- Die 1 -->
+<div class="w-16 h-16 bg-surface-container-lowest rounded-md flex items-center justify-center relative shadow-inner">
+<div class="grid grid-cols-3 grid-rows-3 gap-1 p-2 w-full h-full">
+<div class="w-2 h-2 rounded-full bg-secondary-container col-start-1 row-start-1"></div>
+<div class="w-2 h-2 rounded-full bg-secondary-container col-start-3 row-start-1"></div>
+<div class="w-2 h-2 rounded-full bg-secondary-container col-start-2 row-start-2"></div>
+<div class="w-2 h-2 rounded-full bg-secondary-container col-start-1 row-start-3"></div>
+<div class="w-2 h-2 rounded-full bg-secondary-container col-start-3 row-start-3"></div>
+</div>
+</div>
+<!-- Die 2 -->
+<div class="w-16 h-16 bg-surface-container-lowest rounded-md flex items-center justify-center relative shadow-inner rotate-12">
+<div class="grid grid-cols-3 grid-rows-3 gap-1 p-2 w-full h-full">
+<div class="w-2 h-2 rounded-full bg-secondary-container col-start-1 row-start-1"></div>
+<div class="w-2 h-2 rounded-full bg-secondary-container col-start-3 row-start-3"></div>
+</div>
+</div>
+</div>
+<!-- Other Players -->
+<div class="col-span-2 flex gap-2 overflow-x-auto py-2 no-scrollbar">
+<div class="flex-shrink-0 bg-surface-container-low/80 px-4 py-2 rounded-full border border-outline-variant/10 flex items-center gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
+<img alt="Elena V." data-alt="minimalist profile avatar of a woman with elegant lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCz-KqA4MAjG1c0WOZq04O4pQUemQztHD-vgsbuHDYv2NSMOPOI2iCNcTz8lh3CuV8ULGrzUiCuzGE4QrHzFTV61bBqLPvGcn2X5vnlUEn75GqR-nc-aTdhPuUuTIcV7mE-2Gx1U1P0wczHpqXBYWmsrQy141QUrfQFpmhvg5W1j-LE1esmCOnVHsZxzZMaFrhkJEsG-OR5M-TB6SdrdiU-IHlL1DqZQ5fqGC_05Fj6Md_eQv5r26DR0JgbN8FN9tuaqW2uPYbG8ACR"/>
+</div>
+<span class="font-label text-xs text-on-surface">Elena V.</span>
+<span class="font-label text-[10px] text-primary">Active</span>
+</div>
+<div class="flex-shrink-0 bg-surface-container-low/40 px-4 py-2 rounded-full border border-outline-variant/5 flex items-center gap-3 opacity-60">
+<div class="w-6 h-6 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
+<img alt="Marcus" data-alt="minimalist profile avatar of a man with elegant lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRneQo8PvgarhE_WrhA0RF7UpiR0Iap2oibtc8VD1eGviZr9t72jhhAdt-3mzsHxD3AnPrFdpGPcbTqNfZ75odWJkAGldY_ig1sgQ1crz_dhHdupV0w_L-r2FQ6iSQmoz98fnGpGeKonFTJjTwNWP8Vrk4GPdpb8YINT_XNrgVAGynih_YMBAmb3fa5RekWr1mldwYQOGqWYgHVy58ta67z6HKx9xOSM_R7HifdTxQ2ABYm1HE7DN4GUDXeJOhaALrvsHNXAOZHnW4"/>
+</div>
+<span class="font-label text-xs text-on-surface">Marcus T.</span>
+<span class="font-label text-[10px] text-outline">Waiting</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Toast Notification (Elena V.) -->
+<div class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm glass-effect border border-outline-variant/20 rounded-xl p-4 shadow-2xl flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="person_play">person_play</span>
+</div>
+<div class="flex-1">
+<p class="text-on-surface text-sm font-medium">Elena V. ha realizado su jugada</p>
+<p class="text-outline text-[10px] uppercase tracking-widest">Hace un momento</p>
+</div>
+<span class="material-symbols-outlined text-outline text-lg cursor-pointer" data-icon="close">close</span>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-20 bg-[#131313]/80 backdrop-blur-md flex justify-around items-center px-4 pb-4 border-t border-[#414942]/20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-50 rounded-t-xl">
+<button class="flex flex-col items-center justify-center bg-[#1a472a] text-[#a1d2ab] rounded-xl px-4 py-1 transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="casino">casino</span>
+<span class="font-['Manrope'] uppercase tracking-widest text-[10px]">Table</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#353535] px-4 py-1 hover:bg-[#353535] hover:text-[#f5f5f0] transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-['Manrope'] uppercase tracking-widest text-[10px]">History</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#353535] px-4 py-1 hover:bg-[#353535] hover:text-[#f5f5f0] transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-['Manrope'] uppercase tracking-widest text-[10px]">Lounge</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#353535] px-4 py-1 hover:bg-[#353535] hover:text-[#f5f5f0] transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-['Manrope'] uppercase tracking-widest text-[10px]">Rules</span>
+</button>
+</nav>
+</body></html>
