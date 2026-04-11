@@ -12,6 +12,7 @@ import '../screens/game/prediction_screen.dart';
 import '../screens/results/round_results_screen.dart';
 import '../screens/results/final_results_screen.dart';
 import '../screens/help/help_screen.dart';
+import '../screens/dev/ui_preview_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -63,5 +64,9 @@ final appRouter = GoRouter(
       builder: (ctx, state) => const FinalResultsScreen(),
     ),
     GoRoute(path: '/help', builder: (ctx, state) => const HelpScreen()),
+    GoRoute(
+      path: '/dev/ui-preview',
+      builder: (ctx, state) => const UiPreviewScreen(),
+    ),
   ],
 );

@@ -68,6 +68,31 @@ class HelpScreen extends StatelessWidget {
                   body:
                       'Zero, Min, More y Max otorgan bonificacion situacional.',
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  'FAQ breve',
+                  style: GoogleFonts.newsreader(
+                    fontSize: 28,
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const _RuleTile(
+                  title: 'Como se define el turno?',
+                  body:
+                      'El servidor publica turn_changed y la mesa actualiza en tiempo real.',
+                ),
+                const _RuleTile(
+                  title: 'Que pasa si alguien se desconecta?',
+                  body:
+                      'Se muestra estado de reconexion y puede pausar temporalmente la ronda.',
+                ),
+                const _RuleTile(
+                  title: 'Puedo cambiar prediccion?',
+                  body:
+                      'No, una vez confirmada la prediccion privada queda bloqueada.',
+                ),
               ],
             ),
           ),

@@ -55,6 +55,16 @@ class GameTableScreen extends StatelessWidget {
                     color: AppColors.onSurfaceVariant,
                   ),
                 ),
+                if (gp.isRoundPaused) ...[
+                  const SizedBox(height: 10),
+                  _InfoCard(
+                    icon: Icons.pause_circle,
+                    title: 'Ronda en pausa',
+                    message:
+                        gp.infoMessage ??
+                        'Se detecto una desconexion temporal. Esperando reconexion.',
+                  ),
+                ],
                 const SizedBox(height: 20),
                 _DiceZone(
                   title: 'Dados visibles',
@@ -91,6 +101,10 @@ class GameTableScreen extends StatelessWidget {
                     title: 'Empate tecnico',
                     message: gp.tieMessage!,
                   ),
+                ],
+                if (gp.activityFeed.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _ActivityFeed(entries: gp.activityFeed),
                 ],
                 const SizedBox(height: 24),
                 Row(
@@ -370,6 +384,55 @@ class _InfoCard extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityFeed extends StatelessWidget {
+  final List<String> entries;
+
+  const _ActivityFeed({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Actividad',
+            style: GoogleFonts.manrope(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: AppColors.outline,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...entries
+              .take(4)
+              .map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    '- $entry',
+                    style: GoogleFonts.manrope(
+                      fontSize: 11,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
         ],
       ),
     );

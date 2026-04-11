@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app/app_colors.dart';
 
@@ -27,16 +28,19 @@ class AppBottomNavBar extends StatelessWidget {
             icon: Icons.home,
             label: 'Home',
             active: active == NavTab.home,
+            onTap: () => context.go('/home'),
           ),
           _NavItem(
             icon: Icons.casino,
             label: 'Games',
             active: active == NavTab.games,
+            onTap: () => context.go('/lobby'),
           ),
           _NavItem(
             icon: Icons.leaderboard,
             label: 'Rankings',
             active: active == NavTab.rankings,
+            onTap: () => context.go('/help'),
           ),
         ],
       ),
@@ -48,46 +52,55 @@ class _NavItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
+  final VoidCallback onTap;
   const _NavItem({
     required this.icon,
     required this.label,
+    required this.onTap,
     this.active = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      decoration: active
-          ? BoxDecoration(
-              color: AppColors.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            )
-          : null,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: active
-                ? AppColors.primary
-                : AppColors.surfaceContainerHighest,
-            size: 22,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          decoration: active
+              ? BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                )
+              : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: active
+                    ? AppColors.primary
+                    : AppColors.surfaceContainerHighest,
+                size: 22,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label.toUpperCase(),
+                style: GoogleFonts.manrope(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: active
+                      ? AppColors.primary
+                      : AppColors.surfaceContainerHighest,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            label.toUpperCase(),
-            style: GoogleFonts.manrope(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.5,
-              color: active
-                  ? AppColors.primary
-                  : AppColors.surfaceContainerHighest,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

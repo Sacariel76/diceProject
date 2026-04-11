@@ -104,6 +104,44 @@ class _RealtimeStatusOverlayState extends State<RealtimeStatusOverlay> {
               ),
             ),
           ),
+        if (gp.connectionStatus == ConnectionStatus.disconnected)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              ignoring: true,
+              child: SafeArea(
+                child: Container(
+                  margin: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.errorContainer.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.wifi_off,
+                        color: AppColors.onErrorContainer,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Conexion inestable. Usa Reintentar para recuperar sincronizacion.',
+                          style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            color: AppColors.onErrorContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         if (gp.showCriticalDisconnectModal)
           Positioned.fill(
             child: Container(

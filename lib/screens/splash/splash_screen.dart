@@ -1,8 +1,9 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
+import '../../state/game_provider.dart';
 import '../../widgets/game/dice_widget.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -30,9 +31,23 @@ class _SplashScreenState extends State<SplashScreen>
       end: 1.5,
     ).animate(CurvedAnimation(parent: _loadingCtrl, curve: Curves.easeInOut));
 
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) context.go('/home');
-    });
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    final gp = Provider.of<GameProvider?>(context, listen: false);
+    if (gp != null) {
+      await Future.wait<void>([
+        Future<void>.delayed(const Duration(seconds: 2)),
+        gp.initializationDone,
+      ]);
+    } else {
+      await Future<void>.delayed(const Duration(seconds: 2));
+    }
+
+    if (mounted) {
+      context.go('/home');
+    }
   }
 
   @override

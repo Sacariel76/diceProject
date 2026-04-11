@@ -47,12 +47,20 @@ class LobbyScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                _LobbyCard(
-                  title: 'Mesas activas',
-                  subtitle: 'Partidas disponibles en este momento',
-                  trailing: '03',
-                  onTap: () => context.push('/join-room'),
-                ),
+                if (gp.players.isEmpty)
+                  _LobbyCard(
+                    title: 'Mesas activas',
+                    subtitle: 'No hay partidas activas. Crea la primera mesa.',
+                    trailing: '0',
+                    onTap: () => context.push('/player-name?action=create'),
+                  )
+                else
+                  _LobbyCard(
+                    title: 'Mesas activas',
+                    subtitle: 'Partidas disponibles en este momento',
+                    trailing: '03',
+                    onTap: () => context.push('/join-room'),
+                  ),
                 const SizedBox(height: 12),
                 _LobbyCard(
                   title: 'Tu perfil',

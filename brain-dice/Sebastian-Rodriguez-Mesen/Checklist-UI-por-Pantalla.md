@@ -43,7 +43,7 @@ status: active
 
 - Referencia: `stitch/splash_screen/code.html`
 - [x] Pantalla de carga inicial con identidad visual.
-- [ ] Estado de inicializacion de app conectado al flujo real.
+- [x] Estado de inicializacion de app conectado al flujo real.
 - [x] Navegacion automatica a acceso al completar init.
 
 ### Design system
@@ -81,7 +81,7 @@ status: active
 - Referencia: `stitch/lobby_principal_m_vil/code.html`
 - [x] Lista de partidas y accion de unirse.
 - [x] Tarjetas de estadisticas/perfil visibles.
-- [ ] Empty state cuando no hay partidas activas.
+- [x] Empty state cuando no hay partidas activas.
 
 ## M3 - Sala y espera
 
@@ -103,7 +103,7 @@ status: active
 
 - Referencia: `stitch/jugador_abandon_sala/code.html`
 - [x] Overlay o mensaje de abandono aplicado.
-- [ ] Comportamiento de pausa/reanudacion segun reglas.
+- [x] Comportamiento de pausa/reanudacion segun reglas.
 
 ## M4 - Mesa de juego
 
@@ -130,7 +130,7 @@ status: active
 
 - Referencia: `stitch/mesa_de_juego_web/code.html`
 - [x] Layout responsive en desktop implementado.
-- [ ] Panel lateral de actividad/chat (si aplica) visible.
+- [x] Panel lateral de actividad/chat (si aplica) visible.
 
 ## M5 - Presentacion de combinacion
 
@@ -144,7 +144,7 @@ status: active
 
 - Referencia: `stitch/error_de_selecci_n_feedback/code.html`
 - [x] Mensaje de validacion cuando faltan dados.
-- [ ] CTA de confirmacion bloqueada en estado invalido.
+- [x] CTA de confirmacion bloqueada en estado invalido.
 
 ### Confirmacion de jugada
 
@@ -163,7 +163,7 @@ status: active
 ### Confirmacion de prediccion
 
 - Referencia: `stitch/confirmaci_n_de_predicci_n/code.html`
-- [ ] Modal de confirmacion privada.
+- [x] Modal de confirmacion privada.
 - [x] Texto y UX de confidencialidad aplicado.
 
 ### Prediccion enviada
@@ -191,7 +191,7 @@ status: active
 
 - Referencia: `stitch/resultados_finales_empate/code.html`
 - [x] Estado especial de empate tecnico.
-- [ ] Mensaje de reglas de desempate claro.
+- [x] Mensaje de reglas de desempate claro.
 
 ## M8 - Estados transversales
 
@@ -211,13 +211,13 @@ status: active
 
 - Referencia: `stitch/error_recuperable/code.html`
 - [x] Vista de error recuperable con boton reintento.
-- [ ] Codigo de error visible para soporte tecnico.
+- [x] Codigo de error visible para soporte tecnico.
 
 ### Estado de error movil
 
 - Referencia: `stitch/estado_de_error_m_vil/code.html`
-- [ ] Pantalla mobile de error de conexion.
-- [ ] CTA de recuperacion y sincronizacion.
+- [x] Pantalla mobile de error de conexion.
+- [x] CTA de recuperacion y sincronizacion.
 
 ## M9 - Ayuda y reglas
 
@@ -227,7 +227,7 @@ status: active
 - [x] Reglas resumidas y escaneables.
 - [x] Ejemplos visuales de combinaciones.
 - [x] Seccion de desempates y predicciones.
-- [ ] FAQ breve dentro de la app.
+- [x] FAQ breve dentro de la app.
 
 ## Checklist de integracion con WebSocket
 

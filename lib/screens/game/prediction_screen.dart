@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,10 +8,23 @@ import '../../app/app_colors.dart';
 import '../../state/game_provider.dart';
 import '../../widgets/common/app_top_bar.dart';
 
-class PredictionScreen extends StatelessWidget {
+class PredictionScreen extends StatefulWidget {
   final String combination;
 
   const PredictionScreen({super.key, required this.combination});
+
+  @override
+  State<PredictionScreen> createState() => _PredictionScreenState();
+}
+
+class _PredictionScreenState extends State<PredictionScreen> {
+  Timer? _submissionTimer;
+
+  @override
+  void dispose() {
+    _submissionTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +55,7 @@ class PredictionScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Combinacion presentada: $combination',
+                  'Combinacion presentada: ${widget.combination}',
                   style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: AppColors.onSurfaceVariant,
@@ -82,11 +97,70 @@ class PredictionScreen extends StatelessWidget {
                           (card) => _PredictionCard(
                             label: card,
                             selected: selected == card,
-                            onTap: () => gp.submitPrediction(card),
+                            onTap: () => context
+                                .read<GameProvider>()
+                                .setPredictionDraft(card),
                           ),
                         )
                         .toList(),
                   ),
+                if (!gp.predictionSubmitted) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: selected == null
+                          ? null
+                          : () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Confirmar prediccion'),
+                                  content: Text(
+                                    'Tu carta quedara privada hasta cierre de ronda.\n\nCarta: $selected',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(false),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(true),
+                                      child: const Text('Confirmar'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (!context.mounted || confirmed != true) {
+                                return;
+                              }
+
+                              context.read<GameProvider>().submitPrediction(
+                                selected,
+                              );
+                              _submissionTimer?.cancel();
+                              _submissionTimer = Timer(
+                                const Duration(milliseconds: 750),
+                                () {
+                                  if (!mounted) {
+                                    return;
+                                  }
+                                  final provider = context.read<GameProvider>();
+                                  if (provider.gameTurnPhase !=
+                                      GameTurnPhase.roundResults) {
+                                    provider.markRoundResultsReadyForPreview();
+                                  }
+                                },
+                              );
+                            },
+                      icon: const Icon(Icons.lock),
+                      label: const Text('Confirmar prediccion privada'),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,

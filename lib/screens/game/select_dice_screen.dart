@@ -152,10 +152,14 @@ class _SelectDiceScreenState extends State<SelectDiceScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => _confirmPlay(gp, pool),
+                    onPressed: _selectedIndexes.length == 3
+                        ? () => _confirmPlay(gp, pool)
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.secondaryContainer,
                       foregroundColor: AppColors.onSecondaryContainer,
+                      disabledBackgroundColor: AppColors.secondaryContainer
+                          .withValues(alpha: 0.35),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: Text(

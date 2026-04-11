@@ -86,6 +86,23 @@ class RoundResultsScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (gp.tieDetected) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryContainer.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Regla de desempate: se compara el valor mas alto; si persiste, segundo y tercer dado en orden descendente.',
+                      style: GoogleFonts.manrope(
+                        fontSize: 11,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,

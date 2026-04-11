@@ -225,6 +225,20 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                                   ),
                                 ],
                               ),
+                              if ((gp.supportErrorCode ?? '').isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Codigo soporte: ${gp.supportErrorCode}',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 10,
+                                      color: AppColors.outline,
+                                      letterSpacing: 0.6,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ] else
                               const SizedBox(height: 12),
                             const SizedBox(height: 16),

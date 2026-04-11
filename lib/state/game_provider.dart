@@ -27,6 +27,7 @@ enum GameTurnPhase {
 class GameProvider extends ChangeNotifier {
   final WebSocketService _socket = WebSocketService();
   StreamSubscription<Map<String, dynamic>>? _socketSub;
+  final Completer<void> _initializationCompleter = Completer<void>();
 
   String playerName = '';
   String roomCode = '';
@@ -54,6 +55,10 @@ class GameProvider extends ChangeNotifier {
   String? tieMessage;
   List<RoundScoreModel> roundScores = [];
   Map<String, int> totalScores = {};
+  bool isInitializationComplete = false;
+  bool isRoundPaused = false;
+  String? supportErrorCode;
+  List<String> activityFeed = [];
 
   bool get isConnected => _socket.isConnected;
   bool get allPlayersReady =>
@@ -71,6 +76,7 @@ class GameProvider extends ChangeNotifier {
       connectionStatus == ConnectionStatus.disconnected;
   bool get showCriticalDisconnectModal =>
       connectionStatus == ConnectionStatus.critical;
+  Future<void> get initializationDone => _initializationCompleter.future;
 
   String get connectionBannerText {
     switch (connectionStatus) {
@@ -119,6 +125,7 @@ class GameProvider extends ChangeNotifier {
     if (!_socket.isConnected) {
       connectionStatus = ConnectionStatus.disconnected;
       errorMessage = _socket.lastError ?? 'No se pudo establecer la conexion.';
+      _markInitialized();
       notifyListeners();
       return;
     }
@@ -130,7 +137,17 @@ class GameProvider extends ChangeNotifier {
       onError: _handleError,
       onDone: _handleDone,
     );
+    _markInitialized();
     notifyListeners();
+  }
+
+  void _markInitialized() {
+    if (!isInitializationComplete) {
+      isInitializationComplete = true;
+    }
+    if (!_initializationCompleter.isCompleted) {
+      _initializationCompleter.complete();
+    }
   }
 
   void _handleDone() {
@@ -176,6 +193,7 @@ class GameProvider extends ChangeNotifier {
           ),
         ];
         errorMessage = null;
+        supportErrorCode = null;
         break;
       case 'room_joined':
         roomCode = data['room_code']?.toString() ?? roomCode;
@@ -183,13 +201,18 @@ class GameProvider extends ChangeNotifier {
         isHost = false;
         phase = RoomPhase.guestWaiting;
         errorMessage = null;
+        supportErrorCode = null;
         players = _parsePlayers(data['players']);
         break;
       case 'player_joined':
         _handlePlayerJoined(data);
+        _appendActivity(
+          '${data['player_name'] ?? 'Jugador'} ingreso a la sala.',
+        );
         break;
       case 'player_left':
         _handlePlayerLeft(data);
+        _appendActivity('Un jugador salio de la sala.');
         break;
       case 'player_ready_changed':
         _handlePlayerReadyChanged(data);
@@ -200,6 +223,7 @@ class GameProvider extends ChangeNotifier {
       case 'turn_changed':
         currentTurnPlayerId = data['player_id']?.toString() ?? '';
         gameTurnPhase = GameTurnPhase.selecting;
+        _appendActivity('Cambio de turno: $currentTurnPlayerName.');
         break;
       case 'phase_changed':
         gameTurnPhase = _parseGameTurnPhase(data['phase']?.toString());
@@ -225,21 +249,30 @@ class GameProvider extends ChangeNotifier {
         break;
       case 'round_result_ready':
         _handleRoundResults(data);
+        _appendActivity('Resultados de ronda disponibles.');
         break;
       case 'final_result_ready':
         _handleFinalResults(data);
+        _appendActivity('Resultados finales disponibles.');
         break;
       case 'tie_detected':
         tieDetected = true;
         tieMessage = data['message']?.toString() ?? 'Empate tecnico detectado.';
+        _appendActivity('Empate tecnico detectado.');
         break;
       case 'join_failed':
         errorMessage =
             data['message']?.toString() ??
             'Codigo no encontrado. Verifica con el anfitrion.';
+        supportErrorCode =
+            data['code']?.toString() ??
+            data['error_code']?.toString() ??
+            'JOIN-FAILED';
         break;
       case 'error':
         errorMessage = data['message']?.toString() ?? 'Error desconocido.';
+        supportErrorCode =
+            data['code']?.toString() ?? data['error_code']?.toString();
         break;
       default:
         break;
@@ -310,7 +343,11 @@ class GameProvider extends ChangeNotifier {
 
     final isPermanent = data['permanent'] as bool? ?? false;
     if (isPermanent) {
+      final leftName = players.where((p) => p.id == leftId).isNotEmpty
+          ? players.firstWhere((p) => p.id == leftId).name
+          : 'Jugador';
       players = players.where((p) => p.id != leftId).toList();
+      resumeRound('$leftName abandono la sala. Ronda reanudada.');
       return;
     }
 
@@ -325,7 +362,7 @@ class GameProvider extends ChangeNotifier {
     final name = players.where((p) => p.id == leftId).isNotEmpty
         ? players.firstWhere((p) => p.id == leftId).name
         : 'Un jugador';
-    infoMessage = '$name abandono temporalmente la sala.';
+    pauseRound('$name abandono temporalmente la sala. Ronda en pausa.');
   }
 
   void _handlePlayerReadyChanged(Map<String, dynamic> data) {
@@ -470,11 +507,21 @@ class GameProvider extends ChangeNotifier {
   void _handleError(dynamic error) {
     connectionStatus = ConnectionStatus.disconnected;
     errorMessage = 'Error de conexion: $error';
+    supportErrorCode = 'CONN-ERROR';
+    _appendActivity('Error de conexion detectado.');
     notifyListeners();
+  }
+
+  void _appendActivity(String entry) {
+    activityFeed = [entry, ...activityFeed];
+    if (activityFeed.length > 10) {
+      activityFeed = activityFeed.take(10).toList();
+    }
   }
 
   void retryConnection() {
     connectionStatus = ConnectionStatus.reconnecting;
+    supportErrorCode = null;
     notifyListeners();
     _socketSub?.cancel();
     _socket.disconnect();
@@ -492,6 +539,7 @@ class GameProvider extends ChangeNotifier {
     playerName = name;
     errorMessage = null;
     _socket.sendMessage({'type': 'create_room', 'player_name': name});
+    _appendActivity('Solicitud para crear sala enviada.');
     notifyListeners();
   }
 
@@ -504,6 +552,7 @@ class GameProvider extends ChangeNotifier {
       'player_name': name,
       'room_code': code,
     });
+    _appendActivity('Intentando unirse a sala $code.');
     notifyListeners();
   }
 
@@ -517,6 +566,7 @@ class GameProvider extends ChangeNotifier {
     players = players
         .map((p) => p.id == playerId ? p.copyWith(isReady: true) : p)
         .toList();
+    _appendActivity('Marcado como listo.');
     notifyListeners();
   }
 
@@ -526,6 +576,7 @@ class GameProvider extends ChangeNotifier {
       'room_code': roomCode,
       'player_id': playerId,
     });
+    _appendActivity('Partida iniciada por host.');
   }
 
   void rollDice() {
@@ -535,6 +586,7 @@ class GameProvider extends ChangeNotifier {
       'room_code': roomCode,
       'player_id': playerId,
     });
+    _appendActivity('Lanzamiento de dados solicitado.');
     notifyListeners();
   }
 
@@ -549,6 +601,7 @@ class GameProvider extends ChangeNotifier {
       'selected_dice': selectedDice,
       'combination': combination,
     });
+    _appendActivity('Combinacion enviada: $combination.');
     notifyListeners();
   }
 
@@ -567,6 +620,7 @@ class GameProvider extends ChangeNotifier {
       'prediction': card,
       'card': card,
     });
+    _appendActivity('Prediccion enviada: $card.');
 
     if (expectedPredictions <= 1 ||
         (expectedPredictions > 0 &&
@@ -574,6 +628,16 @@ class GameProvider extends ChangeNotifier {
       gameTurnPhase = GameTurnPhase.roundResults;
     }
 
+    notifyListeners();
+  }
+
+  void setPredictionDraft(String card) {
+    selectedPrediction = card;
+    notifyListeners();
+  }
+
+  void markRoundResultsReadyForPreview() {
+    gameTurnPhase = GameTurnPhase.roundResults;
     notifyListeners();
   }
 
@@ -597,6 +661,7 @@ class GameProvider extends ChangeNotifier {
         'room_code': roomCode,
         'player_id': playerId,
       });
+      _appendActivity('Paso a la siguiente ronda.');
     }
 
     notifyListeners();
@@ -608,7 +673,22 @@ class GameProvider extends ChangeNotifier {
       'room_code': roomCode,
       'player_id': playerId,
     });
+    _appendActivity('Sala cancelada.');
     reset();
+  }
+
+  void pauseRound(String message) {
+    isRoundPaused = true;
+    infoMessage = message;
+    _appendActivity(message);
+    notifyListeners();
+  }
+
+  void resumeRound(String message) {
+    isRoundPaused = false;
+    infoMessage = message;
+    _appendActivity(message);
+    notifyListeners();
   }
 
   void reset() {
@@ -633,6 +713,75 @@ class GameProvider extends ChangeNotifier {
     tieMessage = null;
     roundScores = [];
     totalScores = {};
+    isRoundPaused = false;
+    supportErrorCode = null;
+    activityFeed = [];
+    notifyListeners();
+  }
+
+  void seedDemoDataForPreview() {
+    playerName = 'Sebastian';
+    playerId = 'p1';
+    roomCode = 'A1B2C3';
+    phase = RoomPhase.playing;
+    players = const [
+      PlayerModel(id: 'p1', name: 'Sebastian', isReady: true, isHost: true),
+      PlayerModel(id: 'p2', name: 'Luis', isReady: true),
+      PlayerModel(id: 'p3', name: 'Samiel', isReady: true),
+    ];
+    visibleDice = [1, 3, 5, 2, 6];
+    hiddenDice = [4, 2, 6];
+    currentRound = 2;
+    currentTurnPlayerId = 'p1';
+    gameTurnPhase = GameTurnPhase.selecting;
+    totalScores = {'p1': 12, 'p2': 9, 'p3': 7};
+    selectedCombination = 'Escalera';
+    selectedPrediction = 'More';
+    predictionSubmitted = true;
+    expectedPredictions = 3;
+    submittedPredictions = 2;
+    tieDetected = false;
+    tieMessage = null;
+    isRoundPaused = false;
+    supportErrorCode = null;
+    roundScores = const [
+      RoundScoreModel(
+        playerId: 'p1',
+        playerName: 'Sebastian',
+        combination: 'Escalera',
+        basePoints: 12,
+        bonusPoints: 2,
+      ),
+      RoundScoreModel(
+        playerId: 'p2',
+        playerName: 'Luis',
+        combination: 'Doble',
+        basePoints: 8,
+        bonusPoints: 1,
+      ),
+      RoundScoreModel(
+        playerId: 'p3',
+        playerName: 'Samiel',
+        combination: 'Sencillo',
+        basePoints: 5,
+        bonusPoints: 0,
+      ),
+    ];
+    activityFeed = [
+      'Prediccion enviada: More.',
+      'Combinacion enviada: Escalera.',
+      'Cambio de turno: Sebastian.',
+    ];
+    errorMessage = null;
+    infoMessage = 'Estado demo activo para revisar UI.';
+    notifyListeners();
+  }
+
+  void seedRecoverableErrorPreview() {
+    connectionStatus = ConnectionStatus.disconnected;
+    errorMessage = 'No se pudo sincronizar con la sala en este momento.';
+    supportErrorCode = 'NET-408';
+    infoMessage = 'Error recuperable detectado.';
     notifyListeners();
   }
 

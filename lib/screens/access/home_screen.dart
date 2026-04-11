@@ -153,6 +153,12 @@ class HomeScreen extends StatelessWidget {
                       color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => context.push('/dev/ui-preview'),
+                    icon: const Icon(Icons.remove_red_eye_outlined),
+                    label: const Text('Modo vista UI (sin validaciones)'),
+                  ),
                 ],
               ),
             ),
