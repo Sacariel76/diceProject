@@ -29,6 +29,14 @@ class _PredictionScreenState extends State<PredictionScreen> {
   @override
   Widget build(BuildContext context) {
     final gp = context.watch<GameProvider>();
+    if (!gp.canOpenPrediction && !gp.predictionSubmitted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        context.go('/game-table');
+      });
+    }
     final selected = gp.selectedPrediction;
 
     return Scaffold(

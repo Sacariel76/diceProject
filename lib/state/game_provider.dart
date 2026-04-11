@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+
 import '../models/player_model.dart';
 import '../models/round_score_model.dart';
 import '../services/websocket_service.dart';
@@ -60,17 +61,28 @@ class GameProvider extends ChangeNotifier {
   String? supportErrorCode;
   List<String> activityFeed = [];
 
+  List<_DieSnapshot> _myDice = [];
+  String? _lastServerPhase;
+  bool _myHasRolled = false;
+  int _mySubmittedCount = 0;
+  int _currentPresentationStep = 0;
+
   bool get isConnected => _socket.isConnected;
-  bool get allPlayersReady =>
-      players.isNotEmpty && players.every((p) => p.isReady);
+  bool get allPlayersReady => players.length >= 2;
   bool get isMyTurn =>
       currentTurnPlayerId.isEmpty || currentTurnPlayerId == playerId;
+  bool get canRollDice =>
+      phase == RoomPhase.playing &&
+      gameTurnPhase == GameTurnPhase.rolling &&
+      !_myHasRolled;
+  bool get canOpenPrediction =>
+      phase == RoomPhase.playing && gameTurnPhase == GameTurnPhase.predicting;
   bool get canPresentHand =>
       phase == RoomPhase.playing &&
+      gameTurnPhase == GameTurnPhase.selecting &&
       isMyTurn &&
-      (gameTurnPhase == GameTurnPhase.waiting ||
-          gameTurnPhase == GameTurnPhase.rolling ||
-          gameTurnPhase == GameTurnPhase.selecting);
+      (_mySubmittedCount < _currentPresentationStep ||
+          _currentPresentationStep == 0);
   bool get showConnectionBanner =>
       connectionStatus == ConnectionStatus.reconnecting ||
       connectionStatus == ConnectionStatus.disconnected;
@@ -102,6 +114,13 @@ class GameProvider extends ChangeNotifier {
   }
 
   List<int> get dicePoolForSelection {
+    final available = _myDice
+        .where((d) => !d.used)
+        .map((d) => d.value)
+        .toList(growable: false);
+    if (available.isNotEmpty) {
+      return available;
+    }
     if (visibleDice.length >= 3) {
       return visibleDice;
     }
@@ -160,25 +179,6 @@ class GameProvider extends ChangeNotifier {
     final type = data['type']?.toString() ?? '';
 
     switch (type) {
-      case 'connected':
-        _applyConnectionState('connected');
-        break;
-      case 'connection_state_changed':
-        _applyConnectionState(data['state']?.toString() ?? 'connected');
-        break;
-      case 'reconnecting':
-        _applyConnectionState('reconnecting');
-        infoMessage = 'Intentando reconectar...';
-        break;
-      case 'reconnected':
-        _applyConnectionState('connected');
-        infoMessage = 'Conexion restablecida.';
-        break;
-      case 'critical_disconnect':
-        _applyConnectionState('critical');
-        errorMessage =
-            data['message']?.toString() ?? 'Desconexion critica detectada.';
-        break;
       case 'room_created':
         roomCode = data['room_code']?.toString() ?? roomCode;
         playerId = data['player_id']?.toString() ?? playerId;
@@ -194,6 +194,7 @@ class GameProvider extends ChangeNotifier {
         ];
         errorMessage = null;
         supportErrorCode = null;
+        _appendActivity('Sala creada: $roomCode');
         break;
       case 'room_joined':
         roomCode = data['room_code']?.toString() ?? roomCode;
@@ -202,77 +203,19 @@ class GameProvider extends ChangeNotifier {
         phase = RoomPhase.guestWaiting;
         errorMessage = null;
         supportErrorCode = null;
-        players = _parsePlayers(data['players']);
+        _appendActivity('Ingreso exitoso a sala: $roomCode');
         break;
-      case 'player_joined':
-        _handlePlayerJoined(data);
-        _appendActivity(
-          '${data['player_name'] ?? 'Jugador'} ingreso a la sala.',
-        );
-        break;
-      case 'player_left':
-        _handlePlayerLeft(data);
-        _appendActivity('Un jugador salio de la sala.');
-        break;
-      case 'player_ready_changed':
-        _handlePlayerReadyChanged(data);
-        break;
-      case 'game_started':
-        _handleGameStarted(data);
-        break;
-      case 'turn_changed':
-        currentTurnPlayerId = data['player_id']?.toString() ?? '';
-        gameTurnPhase = GameTurnPhase.selecting;
-        _appendActivity('Cambio de turno: $currentTurnPlayerName.');
-        break;
-      case 'phase_changed':
-        gameTurnPhase = _parseGameTurnPhase(data['phase']?.toString());
-        break;
-      case 'dice_rolled':
-        visibleDice = _parseDice(data['visible_dice']);
-        hiddenDice = _parseDice(data['hidden_dice']);
-        gameTurnPhase = GameTurnPhase.selecting;
-        break;
-      case 'hand_submitted':
-        _handleHandSubmitted(data);
-        break;
-      case 'prediction_submitted':
-        submittedPredictions =
-            (data['submitted_count'] as num?)?.toInt() ?? submittedPredictions;
-        expectedPredictions =
-            (data['total_players'] as num?)?.toInt() ??
-            (players.isEmpty ? expectedPredictions : players.length);
-        if (submittedPredictions >= expectedPredictions &&
-            expectedPredictions > 0) {
-          gameTurnPhase = GameTurnPhase.roundResults;
+      case 'state_update':
+        final rawState = data['state'];
+        if (rawState is Map) {
+          _handleServerState(rawState.cast<String, dynamic>());
         }
-        break;
-      case 'round_result_ready':
-        _handleRoundResults(data);
-        _appendActivity('Resultados de ronda disponibles.');
-        break;
-      case 'final_result_ready':
-        _handleFinalResults(data);
-        _appendActivity('Resultados finales disponibles.');
-        break;
-      case 'tie_detected':
-        tieDetected = true;
-        tieMessage = data['message']?.toString() ?? 'Empate tecnico detectado.';
-        _appendActivity('Empate tecnico detectado.');
-        break;
-      case 'join_failed':
-        errorMessage =
-            data['message']?.toString() ??
-            'Codigo no encontrado. Verifica con el anfitrion.';
-        supportErrorCode =
-            data['code']?.toString() ??
-            data['error_code']?.toString() ??
-            'JOIN-FAILED';
         break;
       case 'error':
         errorMessage = data['message']?.toString() ?? 'Error desconocido.';
         supportErrorCode =
             data['code']?.toString() ?? data['error_code']?.toString();
+        _appendActivity(errorMessage ?? 'Error');
         break;
       default:
         break;
@@ -281,227 +224,262 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _applyConnectionState(String state) {
-    switch (state) {
-      case 'connected':
-        connectionStatus = ConnectionStatus.connected;
-        break;
-      case 'connecting':
-        connectionStatus = ConnectionStatus.connecting;
-        break;
-      case 'reconnecting':
-        connectionStatus = ConnectionStatus.reconnecting;
-        break;
-      case 'critical':
-      case 'critical_disconnect':
-        connectionStatus = ConnectionStatus.critical;
-        break;
-      default:
-        connectionStatus = ConnectionStatus.disconnected;
-        break;
-    }
-  }
+  void _handleServerState(Map<String, dynamic> state) {
+    roomCode = state['room_code']?.toString() ?? roomCode;
+    currentRound = (state['current_round'] as num?)?.toInt() ?? currentRound;
 
-  void _handlePlayerJoined(Map<String, dynamic> data) {
-    final newId = data['player_id']?.toString() ?? '';
-    if (newId.isEmpty) {
-      return;
+    final hostId = state['host_id']?.toString() ?? '';
+    if (hostId.isNotEmpty && playerId.isNotEmpty) {
+      isHost = hostId == playerId;
     }
 
-    final already = players.any((p) => p.id == newId);
-    if (!already) {
-      players = [
-        ...players,
-        PlayerModel(
-          id: newId,
-          name: data['player_name']?.toString() ?? 'Jugador',
-          isHost: data['is_host'] as bool? ?? false,
-          isConnected: true,
-        ),
-      ];
-      infoMessage = '${data['player_name'] ?? 'Un jugador'} se unio a la sala.';
-      return;
+    final started = state['started'] as bool? ?? false;
+    if (started) {
+      phase = RoomPhase.playing;
+    } else if (roomCode.isEmpty) {
+      phase = RoomPhase.initial;
+    } else {
+      phase = isHost ? RoomPhase.hostWaiting : RoomPhase.guestWaiting;
     }
 
-    players = players
-        .map(
-          (p) => p.id == newId
-              ? p.copyWith(
-                  isConnected: true,
-                  name: data['player_name']?.toString(),
-                )
-              : p,
-        )
-        .toList();
-  }
+    final rawPlayers = state['players'];
+    players = _parsePlayers(rawPlayers, hostId);
 
-  void _handlePlayerLeft(Map<String, dynamic> data) {
-    final leftId = data['player_id']?.toString() ?? '';
-    if (leftId.isEmpty) {
-      return;
+    final me = players.where((p) => p.id == playerId);
+    if (me.isNotEmpty) {
+      final meRaw = _findPlayerRaw(rawPlayers, playerId);
+      _syncDiceFromMe(meRaw);
+      selectedPrediction = meRaw?['prediction']?.toString();
+      predictionSubmitted = selectedPrediction != null;
+      _myHasRolled = meRaw?['has_rolled'] as bool? ?? false;
+      _mySubmittedCount = _countSubmittedCombinations(meRaw);
     }
 
-    final isPermanent = data['permanent'] as bool? ?? false;
-    if (isPermanent) {
-      final leftName = players.where((p) => p.id == leftId).isNotEmpty
-          ? players.firstWhere((p) => p.id == leftId).name
-          : 'Jugador';
-      players = players.where((p) => p.id != leftId).toList();
-      resumeRound('$leftName abandono la sala. Ronda reanudada.');
-      return;
+    submittedPredictions = _countPredictions(rawPlayers);
+    expectedPredictions = players.length;
+
+    final rawPhase = state['current_phase']?.toString();
+    gameTurnPhase = _mapServerPhaseToTurn(rawPhase);
+    _currentPresentationStep = _presentationStep(rawPhase);
+    _applyTurnFromServerState(state, rawPhase);
+
+    if (_lastServerPhase != rawPhase) {
+      _appendActivity('Fase: ${rawPhase ?? 'desconocida'}');
+      _lastServerPhase = rawPhase;
     }
 
-    players = players
-        .map(
-          (p) => p.id == leftId
-              ? p.copyWith(isConnected: false, isReady: false)
-              : p,
-        )
-        .toList();
+    totalScores = _parseTotalScores(rawPlayers);
+    roundScores = _parseRoundScores(rawPlayers);
 
-    final name = players.where((p) => p.id == leftId).isNotEmpty
-        ? players.firstWhere((p) => p.id == leftId).name
-        : 'Un jugador';
-    pauseRound('$name abandono temporalmente la sala. Ronda en pausa.');
-  }
-
-  void _handlePlayerReadyChanged(Map<String, dynamic> data) {
-    final pid = data['player_id']?.toString() ?? '';
-    final ready = data['is_ready'] as bool? ?? false;
-
-    players = players
-        .map((p) => p.id == pid ? p.copyWith(isReady: ready) : p)
-        .toList();
-  }
-
-  void _handleGameStarted(Map<String, dynamic> data) {
-    phase = RoomPhase.playing;
-    currentRound = (data['round'] as num?)?.toInt() ?? 1;
-    gameTurnPhase = GameTurnPhase.waiting;
-    currentTurnPlayerId = data['current_turn_player_id']?.toString() ?? '';
-    visibleDice = _parseDice(data['visible_dice']);
-    hiddenDice = _parseDice(data['hidden_dice']);
-    selectedCombination = null;
-    selectedPrediction = null;
-    predictionSubmitted = false;
-    submittedPredictions = 0;
-    expectedPredictions = players.isEmpty ? 0 : players.length;
+    final lastResult = state['last_result'];
     tieDetected = false;
     tieMessage = null;
-  }
+    if (lastResult is Map) {
+      tieDetected = lastResult['tie'] as bool? ?? false;
+      if (tieDetected) {
+        tieMessage = 'Empate tecnico detectado en presentacion actual.';
+      }
+    }
 
-  void _handleHandSubmitted(Map<String, dynamic> data) {
-    final ownerId = data['player_id']?.toString() ?? '';
-    final combination = data['combination']?.toString();
+    final anyDisconnected = players.any((p) => !p.isConnected);
+    if (anyDisconnected) {
+      isRoundPaused = true;
+      infoMessage = 'Hay jugadores desconectados. Esperando reconexion.';
+    } else if (isRoundPaused) {
+      isRoundPaused = false;
+      infoMessage = 'Conexion restablecida. Ronda reanudada.';
+    }
 
-    if (ownerId == playerId && combination != null) {
-      selectedCombination = combination;
-      gameTurnPhase = GameTurnPhase.predicting;
+    if (gameTurnPhase == GameTurnPhase.finalResults) {
+      phase = RoomPhase.playing;
     }
   }
 
-  void _handleRoundResults(Map<String, dynamic> data) {
-    roundScores = _parseRoundScores(data);
-
-    if (data['total_scores'] != null) {
-      totalScores = _parseTotalScores(data['total_scores']);
+  void _applyTurnFromServerState(Map<String, dynamic> state, String? rawPhase) {
+    if (rawPhase == 'Presentation2' || rawPhase == 'Presentation3') {
+      final order =
+          (state['turn_order'] as List?)
+              ?.map((e) => e.toString())
+              .toList(growable: false) ??
+          const <String>[];
+      final turnIndex = (state['turn_index'] as num?)?.toInt() ?? 0;
+      if (turnIndex >= 0 && turnIndex < order.length) {
+        currentTurnPlayerId = order[turnIndex];
+        return;
+      }
     }
-
-    gameTurnPhase = GameTurnPhase.roundResults;
-    submittedPredictions = 0;
-    predictionSubmitted = false;
+    currentTurnPlayerId = '';
   }
 
-  void _handleFinalResults(Map<String, dynamic> data) {
-    if (data['total_scores'] != null) {
-      totalScores = _parseTotalScores(data['total_scores']);
-    }
-    gameTurnPhase = GameTurnPhase.finalResults;
-  }
-
-  List<PlayerModel> _parsePlayers(dynamic rawPlayers) {
+  List<PlayerModel> _parsePlayers(dynamic rawPlayers, String hostId) {
     if (rawPlayers is! List) {
       return players;
     }
 
     return rawPlayers.whereType<Map>().map((dynamic raw) {
       final map = raw.cast<String, dynamic>();
+      final id = map['id']?.toString() ?? map['player_id']?.toString() ?? '';
       return PlayerModel(
-        id: map['player_id']?.toString() ?? '',
-        name: map['player_name']?.toString() ?? 'Jugador',
-        isReady: map['is_ready'] as bool? ?? false,
-        isHost: map['is_host'] as bool? ?? false,
-        isConnected: map['is_connected'] as bool? ?? true,
+        id: id,
+        name:
+            map['name']?.toString() ??
+            map['player_name']?.toString() ??
+            'Jugador',
+        isReady: true,
+        isHost: id == hostId,
+        isConnected:
+            map['connected'] as bool? ?? map['is_connected'] as bool? ?? true,
       );
     }).toList();
   }
 
-  List<int> _parseDice(dynamic rawDice) {
-    if (rawDice is! List) {
-      return [];
+  Map<String, dynamic>? _findPlayerRaw(dynamic rawPlayers, String id) {
+    if (rawPlayers is! List) {
+      return null;
     }
 
-    return rawDice
-        .map((value) => (value as num?)?.toInt())
-        .whereType<int>()
-        .toList();
-  }
-
-  GameTurnPhase _parseGameTurnPhase(String? rawPhase) {
-    switch (rawPhase) {
-      case 'rolling':
-        return GameTurnPhase.rolling;
-      case 'selecting':
-        return GameTurnPhase.selecting;
-      case 'predicting':
-        return GameTurnPhase.predicting;
-      case 'round_results':
-        return GameTurnPhase.roundResults;
-      case 'final_results':
-        return GameTurnPhase.finalResults;
-      case 'waiting':
-      default:
-        return GameTurnPhase.waiting;
+    for (final item in rawPlayers.whereType<Map>()) {
+      final map = item.cast<String, dynamic>();
+      final playerIdFromState =
+          map['id']?.toString() ?? map['player_id']?.toString() ?? '';
+      if (playerIdFromState == id) {
+        return map;
+      }
     }
+    return null;
   }
 
-  List<RoundScoreModel> _parseRoundScores(Map<String, dynamic> data) {
-    final dynamic raw = data['scores'] ?? data['round_scores'];
+  int _countSubmittedCombinations(Map<String, dynamic>? meRaw) {
+    if (meRaw == null) {
+      return 0;
+    }
+
+    final raw = meRaw['combinations_submitted'];
     if (raw is! List) {
+      return 0;
+    }
+    return raw.length;
+  }
+
+  int _presentationStep(String? rawPhase) {
+    switch (rawPhase) {
+      case 'Presentation1':
+        return 1;
+      case 'Presentation2':
+        return 2;
+      case 'Presentation3':
+        return 3;
+      default:
+        return 0;
+    }
+  }
+
+  void _syncDiceFromMe(Map<String, dynamic>? meRaw) {
+    _myDice = [];
+    visibleDice = [];
+    hiddenDice = [];
+
+    final rawDice = meRaw?['dice'];
+    if (rawDice is! List) {
+      return;
+    }
+
+    for (final item in rawDice.whereType<Map>()) {
+      final die = item.cast<String, dynamic>();
+      final id = die['id']?.toString() ?? '';
+      final value = (die['value'] as num?)?.toInt() ?? 0;
+      final hidden = die['hidden'] as bool? ?? false;
+      final used = die['used'] as bool? ?? false;
+
+      if (id.isEmpty || value <= 0) {
+        continue;
+      }
+
+      _myDice.add(
+        _DieSnapshot(id: id, value: value, hidden: hidden, used: used),
+      );
+      if (hidden) {
+        hiddenDice.add(value);
+      } else {
+        visibleDice.add(value);
+      }
+    }
+  }
+
+  int _countPredictions(dynamic rawPlayers) {
+    if (rawPlayers is! List) {
+      return submittedPredictions;
+    }
+
+    var count = 0;
+    for (final item in rawPlayers.whereType<Map>()) {
+      final map = item.cast<String, dynamic>();
+      if (map['prediction'] != null) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  Map<String, int> _parseTotalScores(dynamic rawPlayers) {
+    final totals = <String, int>{};
+    if (rawPlayers is! List) {
+      return totals;
+    }
+
+    for (final item in rawPlayers.whereType<Map>()) {
+      final map = item.cast<String, dynamic>();
+      final id = map['id']?.toString() ?? map['player_id']?.toString();
+      final score = (map['score_total'] as num?)?.toDouble();
+      if (id != null && score != null) {
+        totals[id] = score.round();
+      }
+    }
+    return totals;
+  }
+
+  List<RoundScoreModel> _parseRoundScores(dynamic rawPlayers) {
+    if (rawPlayers is! List) {
       return const [];
     }
 
-    return raw
-        .whereType<Map>()
-        .map((dynamic e) => RoundScoreModel.fromJson(e.cast<String, dynamic>()))
-        .toList();
+    return rawPlayers.whereType<Map>().map((dynamic raw) {
+      final map = raw.cast<String, dynamic>();
+      final id = map['id']?.toString() ?? map['player_id']?.toString() ?? '';
+      final name =
+          map['name']?.toString() ??
+          map['player_name']?.toString() ??
+          'Jugador';
+      final scoreRound = (map['score_round'] as num?)?.toDouble() ?? 0;
+
+      return RoundScoreModel(
+        playerId: id,
+        playerName: name,
+        combination: 'Ronda',
+        basePoints: scoreRound.round(),
+        bonusPoints: 0,
+      );
+    }).toList();
   }
 
-  Map<String, int> _parseTotalScores(dynamic rawScores) {
-    final result = <String, int>{};
-
-    if (rawScores is Map) {
-      rawScores.forEach((key, value) {
-        final score = (value as num?)?.toInt();
-        if (score != null) {
-          result[key.toString()] = score;
-        }
-      });
-      return result;
+  GameTurnPhase _mapServerPhaseToTurn(String? rawPhase) {
+    switch (rawPhase) {
+      case 'RollingDice':
+        return GameTurnPhase.rolling;
+      case 'Prediction':
+        return GameTurnPhase.predicting;
+      case 'Presentation1':
+      case 'Presentation2':
+      case 'Presentation3':
+        return GameTurnPhase.selecting;
+      case 'RoundSummary':
+        return GameTurnPhase.roundResults;
+      case 'GameOver':
+        return GameTurnPhase.finalResults;
+      case 'WaitingPlayers':
+      default:
+        return GameTurnPhase.waiting;
     }
-
-    if (rawScores is List) {
-      for (final item in rawScores.whereType<Map>()) {
-        final row = item.cast<String, dynamic>();
-        final id = row['player_id']?.toString();
-        final score = (row['score'] as num?)?.toInt();
-        if (id != null && score != null) {
-          result[id] = score;
-        }
-      }
-    }
-
-    return result;
   }
 
   void _handleError(dynamic error) {
@@ -538,6 +516,7 @@ class GameProvider extends ChangeNotifier {
   void createRoom(String name) {
     playerName = name;
     errorMessage = null;
+    supportErrorCode = null;
     _socket.sendMessage({'type': 'create_room', 'player_name': name});
     _appendActivity('Solicitud para crear sala enviada.');
     notifyListeners();
@@ -547,6 +526,7 @@ class GameProvider extends ChangeNotifier {
     playerName = name;
     roomCode = code;
     errorMessage = null;
+    supportErrorCode = null;
     _socket.sendMessage({
       'type': 'join_room',
       'player_name': name,
@@ -557,12 +537,6 @@ class GameProvider extends ChangeNotifier {
   }
 
   void setReady() {
-    _socket.sendMessage({
-      'type': 'player_ready',
-      'room_code': roomCode,
-      'player_id': playerId,
-    });
-
     players = players
         .map((p) => p.id == playerId ? p.copyWith(isReady: true) : p)
         .toList();
@@ -580,6 +554,9 @@ class GameProvider extends ChangeNotifier {
   }
 
   void rollDice() {
+    if (!canRollDice) {
+      return;
+    }
     gameTurnPhase = GameTurnPhase.rolling;
     _socket.sendMessage({
       'type': 'roll_all_dice',
@@ -591,21 +568,72 @@ class GameProvider extends ChangeNotifier {
   }
 
   void submitHand(List<int> selectedDice, String combination) {
+    if (!canPresentHand) {
+      errorMessage = 'Aun no puedes presentar combinacion en esta fase.';
+      supportErrorCode = 'PHASE-SUBMIT';
+      notifyListeners();
+      return;
+    }
+
     selectedCombination = combination;
+
+    final selectedIds = _pickDiceIdsForSelection(selectedDice);
+    if (selectedIds.length != 3) {
+      errorMessage = 'No se pudieron mapear 3 dados validos para enviar.';
+      supportErrorCode = 'DICE-MAP';
+      notifyListeners();
+      return;
+    }
+
     gameTurnPhase = GameTurnPhase.predicting;
     _socket.sendMessage({
       'type': 'submit_combination',
       'room_code': roomCode,
       'player_id': playerId,
-      'dice_ids': selectedDice,
-      'selected_dice': selectedDice,
-      'combination': combination,
+      'dice_ids': selectedIds,
     });
     _appendActivity('Combinacion enviada: $combination.');
     notifyListeners();
   }
 
+  List<String> _pickDiceIdsForSelection(List<int> selectedDice) {
+    final ids = <String>[];
+    final usedLocalIds = <String>{};
+
+    for (final value in selectedDice) {
+      _DieSnapshot? found;
+      for (final die in _myDice) {
+        if (die.used) {
+          continue;
+        }
+        if (die.value == value && !usedLocalIds.contains(die.id)) {
+          found = die;
+          break;
+        }
+      }
+
+      if (found != null) {
+        ids.add(found.id);
+        usedLocalIds.add(found.id);
+      }
+    }
+
+    if (ids.length == 3) {
+      return ids;
+    }
+
+    final fallback = _myDice
+        .where((d) => !d.used)
+        .take(3)
+        .map((d) => d.id)
+        .toList();
+    return fallback;
+  }
+
   void submitPrediction(String card) {
+    if (!canOpenPrediction || predictionSubmitted) {
+      return;
+    }
     selectedPrediction = card;
     predictionSubmitted = true;
     if (expectedPredictions == 0 && players.isNotEmpty) {
@@ -618,15 +646,8 @@ class GameProvider extends ChangeNotifier {
       'room_code': roomCode,
       'player_id': playerId,
       'prediction': card,
-      'card': card,
     });
     _appendActivity('Prediccion enviada: $card.');
-
-    if (expectedPredictions <= 1 ||
-        (expectedPredictions > 0 &&
-            submittedPredictions >= expectedPredictions)) {
-      gameTurnPhase = GameTurnPhase.roundResults;
-    }
 
     notifyListeners();
   }
@@ -642,38 +663,12 @@ class GameProvider extends ChangeNotifier {
   }
 
   void continueAfterRoundResults() {
-    if (currentRound >= totalRounds) {
-      gameTurnPhase = GameTurnPhase.finalResults;
-    } else {
-      currentRound = currentRound + 1;
-      gameTurnPhase = GameTurnPhase.waiting;
-      visibleDice = [];
-      hiddenDice = [];
-      selectedCombination = null;
-      selectedPrediction = null;
-      predictionSubmitted = false;
-      submittedPredictions = 0;
-      roundScores = [];
-      tieDetected = false;
-      tieMessage = null;
-      _socket.sendMessage({
-        'type': 'continue_next_round',
-        'room_code': roomCode,
-        'player_id': playerId,
-      });
-      _appendActivity('Paso a la siguiente ronda.');
-    }
-
+    _appendActivity('Continuando luego de resumen de ronda.');
     notifyListeners();
   }
 
   void cancelRoom() {
-    _socket.sendMessage({
-      'type': 'cancel_room',
-      'room_code': roomCode,
-      'player_id': playerId,
-    });
-    _appendActivity('Sala cancelada.');
+    _appendActivity('Salida local de sala.');
     reset();
   }
 
@@ -716,6 +711,11 @@ class GameProvider extends ChangeNotifier {
     isRoundPaused = false;
     supportErrorCode = null;
     activityFeed = [];
+    _myDice = [];
+    _lastServerPhase = null;
+    _myHasRolled = false;
+    _mySubmittedCount = 0;
+    _currentPresentationStep = 0;
     notifyListeners();
   }
 
@@ -731,6 +731,13 @@ class GameProvider extends ChangeNotifier {
     ];
     visibleDice = [1, 3, 5, 2, 6];
     hiddenDice = [4, 2, 6];
+    _myDice = const [
+      _DieSnapshot(id: 'w1', value: 1, hidden: false, used: false),
+      _DieSnapshot(id: 'w2', value: 3, hidden: false, used: false),
+      _DieSnapshot(id: 'w3', value: 5, hidden: false, used: false),
+      _DieSnapshot(id: 'r1', value: 4, hidden: true, used: false),
+      _DieSnapshot(id: 'b1', value: 2, hidden: true, used: false),
+    ];
     currentRound = 2;
     currentTurnPlayerId = 'p1';
     gameTurnPhase = GameTurnPhase.selecting;
@@ -791,4 +798,18 @@ class GameProvider extends ChangeNotifier {
     _socket.disconnect();
     super.dispose();
   }
+}
+
+class _DieSnapshot {
+  final String id;
+  final int value;
+  final bool hidden;
+  final bool used;
+
+  const _DieSnapshot({
+    required this.id,
+    required this.value,
+    required this.hidden,
+    required this.used,
+  });
 }

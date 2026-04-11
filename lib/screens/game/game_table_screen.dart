@@ -111,7 +111,7 @@ class GameTableScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: gp.isMyTurn ? gp.rollDice : null,
+                        onPressed: gp.canRollDice ? gp.rollDice : null,
                         icon: const Icon(Icons.casino_outlined),
                         label: const Text('Lanzar'),
                       ),
@@ -132,7 +132,48 @@ class GameTableScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                if (gp.canOpenPrediction) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.push(
+                        '/play/prediction?combination=${gp.selectedCombination ?? 'Sencillo'}',
+                      ),
+                      icon: const Icon(Icons.lock_open),
+                      label: const Text('Ir a Prediccion'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondaryContainer,
+                        foregroundColor: AppColors.onSecondaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+                if (gp.gameTurnPhase == GameTurnPhase.rolling)
+                  _InfoCard(
+                    icon: Icons.info_outline,
+                    title: 'Siguiente paso',
+                    message:
+                        'Todos deben lanzar una vez. Cuando termine esta fase, se habilita Prediccion y luego Presentaciones.',
+                  ),
+                if (gp.gameTurnPhase == GameTurnPhase.predicting)
+                  _InfoCard(
+                    icon: Icons.style,
+                    title: 'Prediccion',
+                    message:
+                        'Todos eligen carta Zero/Min/More/Max. Luego se pasa a Presentacion 1.',
+                  ),
+                if (gp.gameTurnPhase == GameTurnPhase.selecting)
+                  _InfoCard(
+                    icon: Icons.touch_app,
+                    title: 'Presentacion',
+                    message:
+                        'Selecciona 3 dados y confirma combinacion. Se requieren 3 presentaciones por ronda.',
+                  ),
+                if (gp.gameTurnPhase == GameTurnPhase.rolling ||
+                    gp.gameTurnPhase == GameTurnPhase.predicting ||
+                    gp.gameTurnPhase == GameTurnPhase.selecting)
+                  const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
