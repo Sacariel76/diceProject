@@ -80,3 +80,61 @@ Para el funcionamiento de este proyecto, se han integrado las siguientes librer�
     * **Max:** El puntaje de la ronda queda de 10 para arriba.
 18. Los jugadores que predigan su puntuación de forma correcta en esa ronda se le recompensará con puntos adicionales dependiendo de la carta seleccionada, en caso de acertar, al jugador se le otorgarán el doble del puntaje que tenga en ese momento, sin embargo, el que prediga un puntaje de 0 se le otorgarán 40 puntos automáticamente.
 19. Son 4 rondas y el juego termina justo después de la 4ta ronda, el que tenga la mayor cantidad de puntos gana, en caso de que varios tengan el mismo puntaje al finalizar, la victoria se anulará y se la dará al siguiente en la lista del puntaje del más alto.
+
+## 🔄 Lógica y Flujo de Desarrollo
+
+Para la implementación técnica en Flutter, el ciclo de vida del juego y la gestión de la visibilidad de datos se rigen bajo los siguientes parámetros:
+
+### 🏗️ Ciclo de Vida de la Partida (Game Loop)
+
+La partida se compone de 4 Rondas Grandes. Cada una de estas rondas debe ejecutar obligatoriamente las siguientes fases:
+
+#### Fase 1: Preparación y Lanzamiento
+
+* **Generación de Dados:** El backend (o el gestor de estado) genera 11 valores aleatorios (1-6) por jugador.
+* **Gestión de Visibilidad:**
+    * **9 Dados Blancos:** Públicos (visibles en la UI de todos los jugadores).
+    * **1 Dado Rojo y 1 Azul:** Privados (almacenados en la "Torre de Dados", solo visibles para el dueño).
+* **Fase de Predicción:** Antes de jugar, cada jugador envía su carta de predicción (Zero, Min, More, Max). Esta información permanece encriptada/oculta para los oponentes hasta el cierre de la ronda.
+
+#### Fase 2: Ciclo de las 3 Presentaciones
+
+Cada ronda se divide en tres actos de selección:
+
+* **Presentación 1:** Selección simultánea de 3 dados. Se revela el puntaje y se determina el orden de turno para la siguiente fase.
+* **Presentación 2:** El jugador con mayor puntaje en la P1 elige primero sus 3 dados de los 8 restantes.
+* **Presentación 3:** Se eligen 3 dados de los 5 restantes. Los 2 dados sobrantes se marcan como descartados en el estado de la aplicación.
+
+#### Fase 3: Resolución y Bonificaciones
+
+* **Cálculo Total:** Se suma el puntaje bruto de las tres presentaciones.
+* **Validación de Carta:** El sistema compara el total obtenido con la predicción inicial:
+    * **Acierto:** Se aplica el multiplicador (x2) o el bono de +40 (si fue Zero).
+    * **Fallo:** Se conserva únicamente el puntaje base de la ronda.
+
+### 📊 Matriz de Visibilidad de Datos
+
+| Información | Jugador Dueño | Oponentes | Lógica (Backend/State) |
+| --- | --- | --- | --- |
+| Dados Blancos | ✅ Visible | ✅ Visible | ✅ Registrado |
+| Dados de Color | ✅ Visible | ❌ Oculto | ✅ Registrado |
+| Carta de Predicción | ✅ Visible | ❌ Oculto | ✅ Registrado |
+| Dados en Mano | ✅ Visible | ❌ Oculto | ✅ Registrado |
+| Dados Presentados | ✅ Visible | ✅ Visible | ✅ Procesado |
+
+### 🛠️ Algoritmo de Evaluación de Combinaciones
+
+La función de evaluación en `game_rules.dart` procesa los tres dados seleccionados `[d1, d2, d3]` bajo la siguiente jerarquía de prioridad:
+
+* **Triple (6 pts):** `d1 == d2 && d2 == d3`.
+* **Escalera (3 pts):** Se ordena la lista y se verifica que sean consecutivos. Importante: La combinación `(6, 1, 2)` no es válida.
+* **Doble (1 pt):** Al menos dos dados iguales.
+* **Sencillo (0 pts):** No cumple ninguna de las anteriores.
+
+**Nota sobre Desempates:** Si dos jugadores presentan la misma combinación (ej. Doble), el sistema compara el valor nominal de los dados. Si el empate persiste, se suman los puntos de la categoría y se dividen equitativamente entre los involucrados.
+
+### 💡 Notas de Implementación (Flutter)
+
+* **Gestión de Estado:** Se recomienda el uso de Provider o Riverpod para manejar la sincronización entre los datos recibidos por el WebSocket y la actualización de la UI en tiempo real.
+* **Componentes Visuales:** El DiceWidget debe ser capaz de renderizar diferentes temas (Blanco, Rojo, Azul) y estados (Oculto en torre/Revelado).
+* **Seguridad de la Información:** La lógica de "qué dados tiene el rival" no debe enviarse completa a todos los clientes para evitar trampas (inspección de estado), solo se deben enviar los datos marcados como "Públicos" en la matriz de visibilidad.
