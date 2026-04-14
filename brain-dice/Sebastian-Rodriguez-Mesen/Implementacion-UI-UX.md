@@ -23,6 +23,7 @@ status: active
 - [[Prompts-Stitch-UI-UX]]
 - [[Planeacion-Implementacion-Flutter]]
 - [[Checklist-UI-por-Pantalla]]
+- [[Plan-Integracion-WS-y-Pendientes-Logica]]
 
 > [!note] Enfoque recomendado
 > El diseno en Stitch se trabaja por modulo para iterar mas rapido y reducir retrabajo.
@@ -85,11 +86,11 @@ Disenar y llevar a implementacion las pantallas y componentes del juego usando S
 
 ## Backlog inicial del owner
 
-- [ ] Definir flujo UX final en Stitch.
-- [ ] Crear set de mockups v1 (mobile/web).
-- [ ] Acordar componentes reutilizables.
-- [ ] Implementar pantallas base (inicio, sala, lobby).
-- [ ] Implementar mesa y resultados.
+- [x] Definir flujo UX final en Stitch.
+- [x] Crear set de mockups v1 (mobile/web).
+- [x] Acordar componentes reutilizables.
+- [x] Implementar pantallas base (inicio, sala, lobby).
+- [x] Implementar mesa y resultados.
 - [ ] Ajustar UI con feedback de QA.
 
 ## Dependencias y colaboracion

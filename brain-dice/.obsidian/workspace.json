@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md",
+                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Implementacion-Core-Game-Logic"
+              "title": "Planeacion-Implementacion-Flutter"
             }
           }
         ]
@@ -110,7 +110,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md",
+                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -120,7 +120,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Enlaces entrantes de Implementacion-Core-Game-Logic"
+              "title": "Enlaces entrantes de Planeacion-Implementacion-Flutter"
             }
           },
           {
@@ -129,12 +129,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md",
+                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Enlaces salientes de Implementacion-Core-Game-Logic"
+              "title": "Enlaces salientes de Planeacion-Implementacion-Flutter"
             }
           },
           {
@@ -172,13 +172,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md",
+                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Esquema de Implementacion-Core-Game-Logic"
+              "title": "Esquema de Planeacion-Implementacion-Flutter"
             }
           }
         ]
@@ -201,16 +201,21 @@
   },
   "active": "27a550d0aa6cfcb6",
   "lastOpenFiles": [
-    "Samiel-Marin-Cambronero/Implementacion-WebSocket.md",
+    "Sin título.md",
+    "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
+    "Sebastian-Rodriguez-Mesen/Prompts-Stitch-UI-UX.md",
+    "Sebastian-Rodriguez-Mesen/Checklist-UI-por-Pantalla.md",
+    "Sebastian-Rodriguez-Mesen/Modulos-UI-UX.md",
     "Sebastian-Rodriguez-Mesen/Implementacion-UI-UX.md",
-    "06-Backlog-Inicial.md",
+    "03-Flujo-GitHub.md",
     "Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md",
+    "Samiel-Marin-Cambronero/Implementacion-WebSocket.md",
+    "06-Backlog-Inicial.md",
     "Samiel-Marin-Cambronero",
     "Sebastian-Rodriguez-Mesen",
     "Luis-Alejandro-Lopez-Reyes",
     "05-Sprints.md",
     "04-Flujo-Trello.md",
-    "03-Flujo-GitHub.md",
     "02-Asignacion-Modulos.md",
     "01-Plan-Maestro.md",
     "00-Index.md",

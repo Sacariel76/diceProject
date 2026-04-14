@@ -16,9 +16,9 @@ status: active
 
 ## Diseno (Stitch)
 
-- [ ] Definir flujo UX completo (inicio, sala, lobby, mesa, resultados).
-- [ ] Crear mockups mobile v1.
-- [ ] Crear mockups web v1.
+- [x] Definir flujo UX completo (inicio, sala, lobby, mesa, resultados).
+- [x] Crear mockups mobile v1.
+- [x] Crear mockups web v1.
 - [ ] Validar mockups con todo el equipo.
 
 ## Core (LoesssLR)
@@ -31,18 +31,18 @@ status: active
 
 ## UI/UX (SebastianRodMes)
 
-- [ ] Implementar pantalla de inicio.
-- [ ] Implementar pantalla de lobby.
-- [ ] Implementar pantalla de mesa de juego.
-- [ ] Implementar pantalla de resultados.
-- [ ] Alinear componentes a Stitch v1.
+- [x] Implementar pantalla de inicio.
+- [x] Implementar pantalla de lobby.
+- [x] Implementar pantalla de mesa de juego.
+- [x] Implementar pantalla de resultados.
+- [x] Alinear componentes a Stitch v1.
 
 ## WebSocket (Sacariel76)
 
-- [ ] Definir contrato de eventos cliente-servidor.
-- [ ] Implementar crear sala y unirse sala.
-- [ ] Sincronizar estado de sala y turnos.
-- [ ] Manejar errores de conexion y reconexion.
+- [x] Definir contrato de eventos cliente-servidor.
+- [x] Implementar crear sala y unirse sala.
+- [x] Sincronizar estado de sala y turnos.
+- [x] Manejar errores de conexion y reconexion.
 - [ ] Estandarizar payloads de error al cliente.
 
 ## Gestion
@@ -51,3 +51,11 @@ status: active
 - [ ] Invitar profesor al tablero.
 - [ ] Crear ramas personales oficiales.
 - [ ] Configurar protecciones de branch en GitHub.
+
+## Pendientes bloqueantes para demo final
+
+- [ ] Ejecutar QA end-to-end de 4 rondas con al menos 2 clientes y registrar evidencia.
+- [ ] Cerrar y documentar regla oficial de desempate y bonus de prediccion entre README, backend y Flutter.
+- [x] Formalizar contrato de eventos WebSocket (nombres, payloads y errores) con ejemplos JSON reales.
+- [x] Verificar navegacion automatica por fase (`Prediction`, `RoundSummary`, `GameOver`) sin bloqueos de flujo.
+- [ ] Validar manejo de reconexion/desconexion critica en partida activa (banner, modal, reintento y salida segura).
