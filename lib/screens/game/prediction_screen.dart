@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,25 +16,56 @@ class PredictionScreen extends StatefulWidget {
 }
 
 class _PredictionScreenState extends State<PredictionScreen> {
-  Timer? _submissionTimer;
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_handlePhaseNavigation);
+      _listenerAttached = true;
+      _handlePhaseNavigation();
+    });
+  }
+
+  void _handlePhaseNavigation() {
+    if (!mounted) {
+      return;
+    }
+
+    final gp = _gp;
+
+    if (gp.gameTurnPhase == GameTurnPhase.finalResults) {
+      context.go('/final-results');
+      return;
+    }
+
+    if (gp.gameTurnPhase == GameTurnPhase.roundResults) {
+      context.go('/round-results');
+      return;
+    }
+
+    if (!gp.canOpenPrediction && !gp.predictionSubmitted) {
+      context.go('/game-table');
+    }
+  }
 
   @override
   void dispose() {
-    _submissionTimer?.cancel();
+    if (_listenerAttached) {
+      _gp.removeListener(_handlePhaseNavigation);
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final gp = context.watch<GameProvider>();
-    if (!gp.canOpenPrediction && !gp.predictionSubmitted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
-        }
-        context.go('/game-table');
-      });
-    }
     final selected = gp.selectedPrediction;
 
     return Scaffold(
@@ -149,20 +178,6 @@ class _PredictionScreenState extends State<PredictionScreen> {
                               context.read<GameProvider>().submitPrediction(
                                 selected,
                               );
-                              _submissionTimer?.cancel();
-                              _submissionTimer = Timer(
-                                const Duration(milliseconds: 750),
-                                () {
-                                  if (!mounted) {
-                                    return;
-                                  }
-                                  final provider = context.read<GameProvider>();
-                                  if (provider.gameTurnPhase !=
-                                      GameTurnPhase.roundResults) {
-                                    provider.markRoundResultsReadyForPreview();
-                                  }
-                                },
-                              );
                             },
                       icon: const Icon(Icons.lock),
                       label: const Text('Confirmar prediccion privada'),
@@ -175,7 +190,9 @@ class _PredictionScreenState extends State<PredictionScreen> {
                   child: ElevatedButton(
                     onPressed: gp.gameTurnPhase == GameTurnPhase.roundResults
                         ? () => context.go('/round-results')
-                        : null,
+                        : (gp.gameTurnPhase == GameTurnPhase.selecting
+                              ? () => context.go('/game-table')
+                              : null),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.secondaryContainer,
                       foregroundColor: AppColors.onSecondaryContainer,
@@ -184,7 +201,9 @@ class _PredictionScreenState extends State<PredictionScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: Text(
-                      'Ver resultados de ronda',
+                      gp.gameTurnPhase == GameTurnPhase.selecting
+                          ? 'Volver a mesa'
+                          : 'Ver resultados de ronda',
                       style: GoogleFonts.manrope(
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.2,
@@ -194,7 +213,9 @@ class _PredictionScreenState extends State<PredictionScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Tu eleccion se mantiene privada hasta el cierre de ronda.',
+                  gp.predictionSubmitted
+                      ? 'Prediccion enviada. Espera a que los demas jugadores confirmen para avanzar de fase.'
+                      : 'Tu eleccion se mantiene privada hasta el cierre de ronda.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
                     fontSize: 11,

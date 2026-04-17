@@ -9,8 +9,84 @@ import '../../widgets/common/app_top_bar.dart';
 import '../../widgets/common/bottom_nav_bar.dart';
 import '../../widgets/game/dice_widget.dart';
 
-class GameTableScreen extends StatelessWidget {
+class GameTableScreen extends StatefulWidget {
   const GameTableScreen({super.key});
+
+  @override
+  State<GameTableScreen> createState() => _GameTableScreenState();
+}
+
+class _GameTableScreenState extends State<GameTableScreen> {
+  String? _lastAutoRoute;
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_handleAutoNavigation);
+      _listenerAttached = true;
+      _handleAutoNavigation();
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_listenerAttached) {
+      _gp.removeListener(_handleAutoNavigation);
+    }
+    super.dispose();
+  }
+
+  void _handleAutoNavigation() {
+    if (!mounted) {
+      return;
+    }
+
+    final gp = _gp;
+    final route = _nextAutoRoute(gp);
+
+    if (route == null) {
+      _lastAutoRoute = null;
+      return;
+    }
+
+    if (route == _lastAutoRoute) {
+      return;
+    }
+
+    _lastAutoRoute = route;
+    context.go(route);
+  }
+
+  String? _nextAutoRoute(GameProvider gp) {
+    if (gp.gameTurnPhase == GameTurnPhase.finalResults) {
+      return '/final-results';
+    }
+
+    if (gp.gameTurnPhase == GameTurnPhase.roundResults) {
+      return '/round-results';
+    }
+
+    if (gp.gameTurnPhase == GameTurnPhase.predicting &&
+        !gp.predictionSubmitted) {
+      final combination = Uri.encodeComponent(
+        gp.selectedCombination ?? 'Sencillo',
+      );
+      return '/play/prediction?combination=$combination';
+    }
+
+    if (gp.gameTurnPhase == GameTurnPhase.selecting) {
+      return '/game-table';
+    }
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {

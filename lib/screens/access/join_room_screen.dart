@@ -15,6 +15,8 @@ class JoinRoomScreen extends StatefulWidget {
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
   final _ctrl = TextEditingController();
   final _focusNode = FocusNode();
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
 
   String get _code => _ctrl.text.toUpperCase();
   bool get _complete => _code.length == 6;
@@ -24,14 +26,21 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     super.initState();
     _ctrl.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GameProvider>().addListener(_onPhaseChange);
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_onPhaseChange);
+      _listenerAttached = true;
       _focusNode.requestFocus();
     });
   }
 
   @override
   void dispose() {
-    context.read<GameProvider>().removeListener(_onPhaseChange);
+    if (_listenerAttached) {
+      _gp.removeListener(_onPhaseChange);
+    }
     _ctrl.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -39,8 +48,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
 
   void _onPhaseChange() {
     if (!mounted) return;
-    final gp = context.read<GameProvider>();
-    if (gp.phase == RoomPhase.guestWaiting) {
+    if (_gp.phase == RoomPhase.guestWaiting) {
       context.go('/room-guest');
     }
   }

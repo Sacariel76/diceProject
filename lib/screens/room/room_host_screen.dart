@@ -16,23 +16,33 @@ class RoomHostScreen extends StatefulWidget {
 }
 
 class _RoomHostScreenState extends State<RoomHostScreen> {
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GameProvider>().addListener(_onPhaseChange);
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_onPhaseChange);
+      _listenerAttached = true;
     });
   }
 
   @override
   void dispose() {
-    context.read<GameProvider>().removeListener(_onPhaseChange);
+    if (_listenerAttached) {
+      _gp.removeListener(_onPhaseChange);
+    }
     super.dispose();
   }
 
   void _onPhaseChange() {
     if (!mounted) return;
-    if (context.read<GameProvider>().phase == RoomPhase.playing) {
+    if (_gp.phase == RoomPhase.playing) {
       context.go('/game-table');
     }
   }

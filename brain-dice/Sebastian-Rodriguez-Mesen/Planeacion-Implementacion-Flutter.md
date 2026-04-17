@@ -149,27 +149,27 @@ lib/
 
 ### Sprint 1 - Base navegable
 
-- [ ] Crear rutas y shell de pantallas M0, M1 y M3.
-- [ ] Formularios de nombre/codigo con validaciones.
-- [ ] Integracion WS minima: crear sala y unirse sala.
+- [x] Crear rutas y shell de pantallas M0, M1 y M3.
+- [x] Formularios de nombre/codigo con validaciones.
+- [x] Integracion WS minima: crear sala y unirse sala.
 
 ### Sprint 2 - Loop de partida
 
-- [ ] Implementar M4 mesa de juego (turno, ronda y score board).
-- [ ] Implementar M5 seleccion/confirmacion de jugada.
-- [ ] Integrar estados de error de seleccion y espera.
+- [x] Implementar M4 mesa de juego (turno, ronda y score board).
+- [x] Implementar M5 seleccion/confirmacion de jugada.
+- [x] Integrar estados de error de seleccion y espera.
 
 ### Sprint 3 - Prediccion y cierre
 
-- [ ] Implementar M6 prediccion secreta completa.
-- [ ] Implementar M7 resultados de ronda y final.
-- [ ] Soportar pantalla final de empate tecnico.
+- [x] Implementar M6 prediccion secreta completa.
+- [x] Implementar M7 resultados de ronda y final.
+- [x] Soportar pantalla final de empate tecnico.
 
 ### Sprint 4 - Robustez UX
 
-- [ ] Implementar M8 reconexion, offline y errores recuperables.
-- [ ] Implementar M9 ayuda y reglas.
-- [ ] Pulir responsive mobile/web y accesibilidad base.
+- [x] Implementar M8 reconexion, offline y errores recuperables.
+- [x] Implementar M9 ayuda y reglas.
+- [x] Pulir responsive mobile/web y accesibilidad base.
 
 ## Criterios de aceptacion medibles
 

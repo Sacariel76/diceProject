@@ -68,6 +68,20 @@ class UiPreviewScreen extends StatelessWidget {
                   },
                 ),
                 _PreviewAction(
+                  label: 'Sembrar desconexion critica',
+                  icon: Icons.portable_wifi_off,
+                  onTap: () {
+                    context
+                        .read<GameProvider>()
+                        .seedCriticalDisconnectPreview();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Estado de desconexion critica cargado'),
+                      ),
+                    );
+                  },
+                ),
+                _PreviewAction(
                   label: 'Simular abandono temporal',
                   icon: Icons.person_off,
                   onTap: () {

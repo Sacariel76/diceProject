@@ -30,6 +30,7 @@ repo: https://github.com/Sacariel76/diceProject.git
 - [[Sebastian-Rodriguez-Mesen/Implementacion-UI-UX]]
 - [[Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter]]
 - [[Sebastian-Rodriguez-Mesen/Checklist-UI-por-Pantalla]]
+- [[Sebastian-Rodriguez-Mesen/Plan-Integracion-WS-y-Pendientes-Logica]]
 - [[Samiel-Marin-Cambronero/Implementacion-WebSocket]]
 
 ## Integrantes
