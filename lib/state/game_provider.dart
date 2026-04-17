@@ -34,8 +34,11 @@ class GameProvider extends ChangeNotifier {
   String roomCode = '';
   String playerId = '';
   bool isHost = false;
+  bool isSpectator = false;
   RoomPhase phase = RoomPhase.initial;
   List<PlayerModel> players = [];
+  List<String> spectators = [];
+
   String? errorMessage;
   String? infoMessage;
 
@@ -69,25 +72,45 @@ class GameProvider extends ChangeNotifier {
 
   bool get isConnected => _socket.isConnected;
   bool get allPlayersReady => players.length >= 2;
+
   bool get isMyTurn =>
-      currentTurnPlayerId.isEmpty || currentTurnPlayerId == playerId;
+      !isSpectator &&
+      (currentTurnPlayerId.isEmpty || currentTurnPlayerId == playerId);
+
   bool get canRollDice =>
+      !isSpectator &&
       phase == RoomPhase.playing &&
       gameTurnPhase == GameTurnPhase.rolling &&
       !_myHasRolled;
+
   bool get canOpenPrediction =>
-      phase == RoomPhase.playing && gameTurnPhase == GameTurnPhase.predicting;
+      !isSpectator &&
+      phase == RoomPhase.playing &&
+      gameTurnPhase == GameTurnPhase.predicting;
+
   bool get canPresentHand =>
+      !isSpectator &&
       phase == RoomPhase.playing &&
       gameTurnPhase == GameTurnPhase.selecting &&
       isMyTurn &&
       (_mySubmittedCount < _currentPresentationStep ||
           _currentPresentationStep == 0);
+
+  bool get canStartGame =>
+      !isSpectator &&
+      isHost &&
+      phase != RoomPhase.playing &&
+      players.length >= 2;
+
+  bool get isReadOnlyViewer => isSpectator;
+
   bool get showConnectionBanner =>
       connectionStatus == ConnectionStatus.reconnecting ||
       connectionStatus == ConnectionStatus.disconnected;
+
   bool get showCriticalDisconnectModal =>
       connectionStatus == ConnectionStatus.critical;
+
   Future<void> get initializationDone => _initializationCompleter.future;
 
   String get connectionBannerText {
@@ -183,6 +206,7 @@ class GameProvider extends ChangeNotifier {
         roomCode = data['room_code']?.toString() ?? roomCode;
         playerId = data['player_id']?.toString() ?? playerId;
         isHost = true;
+        isSpectator = false;
         phase = RoomPhase.hostWaiting;
         players = [
           PlayerModel(
@@ -192,31 +216,49 @@ class GameProvider extends ChangeNotifier {
             isHost: true,
           ),
         ];
+        spectators = [];
         errorMessage = null;
         supportErrorCode = null;
         _appendActivity('Sala creada: $roomCode');
         break;
+
       case 'room_joined':
         roomCode = data['room_code']?.toString() ?? roomCode;
         playerId = data['player_id']?.toString() ?? playerId;
         isHost = false;
+        isSpectator = false;
         phase = RoomPhase.guestWaiting;
         errorMessage = null;
         supportErrorCode = null;
         _appendActivity('Ingreso exitoso a sala: $roomCode');
         break;
+
+      case 'spectator_joined':
+        roomCode = data['room_code']?.toString() ?? roomCode;
+        playerId = data['spectator_id']?.toString() ?? playerId;
+        isHost = false;
+        isSpectator = true;
+        phase = RoomPhase.guestWaiting;
+        errorMessage = null;
+        supportErrorCode = null;
+        _appendActivity('Ingreso como espectador a sala: $roomCode');
+        _appendActivity('Modo espectador activado');
+        break;
+
       case 'state_update':
         final rawState = data['state'];
         if (rawState is Map) {
           _handleServerState(rawState.cast<String, dynamic>());
         }
         break;
+
       case 'error':
         errorMessage = data['message']?.toString() ?? 'Error desconocido.';
         supportErrorCode =
             data['code']?.toString() ?? data['error_code']?.toString();
         _appendActivity(errorMessage ?? 'Error');
         break;
+
       default:
         break;
     }
@@ -229,8 +271,10 @@ class GameProvider extends ChangeNotifier {
     currentRound = (state['current_round'] as num?)?.toInt() ?? currentRound;
 
     final hostId = state['host_id']?.toString() ?? '';
-    if (hostId.isNotEmpty && playerId.isNotEmpty) {
+    if (!isSpectator && hostId.isNotEmpty && playerId.isNotEmpty) {
       isHost = hostId == playerId;
+    } else if (isSpectator) {
+      isHost = false;
     }
 
     final started = state['started'] as bool? ?? false;
@@ -245,14 +289,27 @@ class GameProvider extends ChangeNotifier {
     final rawPlayers = state['players'];
     players = _parsePlayers(rawPlayers, hostId);
 
-    final me = players.where((p) => p.id == playerId);
-    if (me.isNotEmpty) {
-      final meRaw = _findPlayerRaw(rawPlayers, playerId);
-      _syncDiceFromMe(meRaw);
-      selectedPrediction = meRaw?['prediction']?.toString();
-      predictionSubmitted = selectedPrediction != null;
-      _myHasRolled = meRaw?['has_rolled'] as bool? ?? false;
-      _mySubmittedCount = _countSubmittedCombinations(meRaw);
+    final rawSpectators = state['spectators'];
+    spectators = _parseSpectators(rawSpectators);
+
+    if (!isSpectator) {
+      final me = players.where((p) => p.id == playerId);
+      if (me.isNotEmpty) {
+        final meRaw = _findPlayerRaw(rawPlayers, playerId);
+        _syncDiceFromMe(meRaw);
+        selectedPrediction = meRaw?['prediction']?.toString();
+        predictionSubmitted = selectedPrediction != null;
+        _myHasRolled = meRaw?['has_rolled'] as bool? ?? false;
+        _mySubmittedCount = _countSubmittedCombinations(meRaw);
+      }
+    } else {
+      _myDice = [];
+      visibleDice = [];
+      hiddenDice = [];
+      selectedPrediction = null;
+      predictionSubmitted = false;
+      _myHasRolled = false;
+      _mySubmittedCount = 0;
     }
 
     submittedPredictions = _countPredictions(rawPlayers);
@@ -331,6 +388,22 @@ class GameProvider extends ChangeNotifier {
             map['connected'] as bool? ?? map['is_connected'] as bool? ?? true,
       );
     }).toList();
+  }
+
+  List<String> _parseSpectators(dynamic rawSpectators) {
+    if (rawSpectators is! List) {
+      return [];
+    }
+
+    return rawSpectators
+        .whereType<Map>()
+        .map((dynamic raw) {
+          final map = raw.cast<String, dynamic>();
+          return map['name']?.toString() ??
+              map['spectator_name']?.toString() ??
+              'Espectador';
+        })
+        .toList();
   }
 
   Map<String, dynamic>? _findPlayerRaw(dynamic rawPlayers, String id) {
@@ -515,6 +588,7 @@ class GameProvider extends ChangeNotifier {
 
   void createRoom(String name) {
     playerName = name;
+    isSpectator = false;
     errorMessage = null;
     supportErrorCode = null;
     _socket.sendMessage({'type': 'create_room', 'player_name': name});
@@ -525,6 +599,7 @@ class GameProvider extends ChangeNotifier {
   void joinRoom(String name, String code) {
     playerName = name;
     roomCode = code;
+    isSpectator = false;
     errorMessage = null;
     supportErrorCode = null;
     _socket.sendMessage({
@@ -536,7 +611,31 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void joinAsSpectator(String name, String code) {
+    playerName = name;
+    roomCode = code;
+    isHost = false;
+    isSpectator = true;
+    errorMessage = null;
+    supportErrorCode = null;
+
+    _socket.sendMessage({
+      'type': 'join_as_spectator',
+      'spectator_name': name,
+      'room_code': code,
+    });
+
+    _appendActivity('Intentando unirse como espectador a sala $code.');
+    notifyListeners();
+  }
+
   void setReady() {
+    if (isSpectator) {
+      infoMessage = 'Modo espectador: esta opcion no esta disponible.';
+      notifyListeners();
+      return;
+    }
+
     players = players
         .map((p) => p.id == playerId ? p.copyWith(isReady: true) : p)
         .toList();
@@ -545,6 +644,12 @@ class GameProvider extends ChangeNotifier {
   }
 
   void startGame() {
+    if (isSpectator) {
+      infoMessage = 'Modo espectador: no puedes iniciar la partida.';
+      notifyListeners();
+      return;
+    }
+
     _socket.sendMessage({
       'type': 'start_game',
       'room_code': roomCode,
@@ -554,6 +659,12 @@ class GameProvider extends ChangeNotifier {
   }
 
   void rollDice() {
+    if (isSpectator) {
+      infoMessage = 'Modo espectador: no puedes lanzar dados.';
+      notifyListeners();
+      return;
+    }
+
     if (!canRollDice) {
       return;
     }
@@ -568,6 +679,13 @@ class GameProvider extends ChangeNotifier {
   }
 
   void submitHand(List<int> selectedDice, String combination) {
+    if (isSpectator) {
+      errorMessage = 'Modo espectador: no puedes enviar combinaciones.';
+      supportErrorCode = 'SPEC-SUBMIT';
+      notifyListeners();
+      return;
+    }
+
     if (!canPresentHand) {
       errorMessage = 'Aun no puedes presentar combinacion en esta fase.';
       supportErrorCode = 'PHASE-SUBMIT';
@@ -631,6 +749,12 @@ class GameProvider extends ChangeNotifier {
   }
 
   void submitPrediction(String card) {
+    if (isSpectator) {
+      infoMessage = 'Modo espectador: no puedes enviar predicciones.';
+      notifyListeners();
+      return;
+    }
+
     if (!canOpenPrediction || predictionSubmitted) {
       return;
     }
@@ -690,8 +814,10 @@ class GameProvider extends ChangeNotifier {
     roomCode = '';
     playerId = '';
     isHost = false;
+    isSpectator = false;
     phase = RoomPhase.initial;
     players = [];
+    spectators = [];
     errorMessage = null;
     infoMessage = null;
     currentRound = 1;
@@ -724,11 +850,13 @@ class GameProvider extends ChangeNotifier {
     playerId = 'p1';
     roomCode = 'A1B2C3';
     phase = RoomPhase.playing;
+    isSpectator = false;
     players = const [
       PlayerModel(id: 'p1', name: 'Sebastian', isReady: true, isHost: true),
       PlayerModel(id: 'p2', name: 'Luis', isReady: true),
       PlayerModel(id: 'p3', name: 'Samiel', isReady: true),
     ];
+    spectators = const ['Observador 1', 'Observador 2'];
     visibleDice = [1, 3, 5, 2, 6];
     hiddenDice = [4, 2, 6];
     _myDice = const [
