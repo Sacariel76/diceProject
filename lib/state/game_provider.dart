@@ -31,6 +31,7 @@ class GameProvider extends ChangeNotifier {
   static const String _codeConnStream = 'CONN-STREAM';
   static const String _codeConnCritical = 'CONN-CRITICAL';
   static const String _codeWsError = 'WS-ERROR';
+  static const int maxRoomPlayers = 5;
 
   final WebSocketService _socket = WebSocketService();
   StreamSubscription<Map<String, dynamic>>? _socketSub;
@@ -70,6 +71,13 @@ class GameProvider extends ChangeNotifier {
   String? supportErrorCode;
   List<String> activityFeed = [];
 
+  String _lastCapacityCheckedRoomCode = '';
+  int? _lastCapacityCheckedPlayers;
+  bool _isCheckingRoomCapacity = false;
+  Timer? _roomCapacityTimeout;
+  bool _awaitingPlayerJoinValidation = false;
+  String _pendingPlayerJoinCode = '';
+
   List<_DieSnapshot> _myDice = [];
   String? _lastServerPhase;
   bool _myHasRolled = false;
@@ -78,6 +86,31 @@ class GameProvider extends ChangeNotifier {
 
   bool get isConnected => _socket.isConnected;
   bool get allPlayersReady => players.length >= 2;
+  bool get isCheckingRoomCapacity => _isCheckingRoomCapacity;
+
+  int? roomPlayerCountForCode(String code) {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty || normalized != _lastCapacityCheckedRoomCode) {
+      return null;
+    }
+    return _lastCapacityCheckedPlayers;
+  }
+
+  bool isRoomFullForCode(String code) {
+    final count = roomPlayerCountForCode(code);
+    if (count == null) {
+      return false;
+    }
+    return count >= maxRoomPlayers;
+  }
+
+  bool canJoinTableForCode(String code) {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.length != 6) {
+      return false;
+    }
+    return !isRoomFullForCode(normalized);
+  }
 
   bool get isMyTurn =>
       !isSpectator &&
@@ -244,10 +277,16 @@ class GameProvider extends ChangeNotifier {
         playerId = data['player_id']?.toString() ?? playerId;
         isHost = false;
         isSpectator = false;
-        phase = RoomPhase.guestWaiting;
+        phase = RoomPhase.initial;
+        _isCheckingRoomCapacity = false;
+        _roomCapacityTimeout?.cancel();
+        _roomCapacityTimeout = null;
+        _lastCapacityCheckedRoomCode = roomCode.trim().toUpperCase();
+        _pendingPlayerJoinCode = _lastCapacityCheckedRoomCode;
+        _awaitingPlayerJoinValidation = true;
         errorMessage = null;
         supportErrorCode = null;
-        _appendActivity('Ingreso exitoso a sala: $roomCode');
+        _appendActivity('Ingreso recibido en sala: $roomCode. Validando cupo...');
         break;
 
       case 'spectator_joined':
@@ -256,10 +295,47 @@ class GameProvider extends ChangeNotifier {
         isHost = false;
         isSpectator = true;
         phase = RoomPhase.guestWaiting;
+        _awaitingPlayerJoinValidation = false;
+        _pendingPlayerJoinCode = '';
+        _isCheckingRoomCapacity = false;
+        _roomCapacityTimeout?.cancel();
+        _roomCapacityTimeout = null;
+        _lastCapacityCheckedRoomCode = roomCode.trim().toUpperCase();
         errorMessage = null;
         supportErrorCode = null;
         _appendActivity('Ingreso como espectador a sala: $roomCode');
         _appendActivity('Modo espectador activado');
+        break;
+
+      case 'join_failed':
+        _awaitingPlayerJoinValidation = false;
+        _pendingPlayerJoinCode = '';
+        errorMessage =
+            data['message']?.toString() ?? 'No fue posible unirse a la sala.';
+        supportErrorCode = _extractSupportCode(data);
+        _syncRoomCapacitySnapshot(data);
+        if (supportErrorCode == 'ROOM-FULL' &&
+            _lastCapacityCheckedPlayers == null) {
+          _lastCapacityCheckedPlayers = maxRoomPlayers;
+          final failedCode =
+              data['room_code']?.toString().trim().toUpperCase() ??
+              roomCode.trim().toUpperCase();
+          if (failedCode.isNotEmpty) {
+            _lastCapacityCheckedRoomCode = failedCode;
+          }
+        }
+        _appendActivity(errorMessage ?? 'No fue posible unirse a la sala.');
+        break;
+
+      case 'room_status':
+      case 'room_info':
+      case 'room_snapshot':
+        final rawState = data['state'];
+        if (rawState is Map) {
+          _syncRoomCapacitySnapshot(rawState.cast<String, dynamic>());
+        } else {
+          _syncRoomCapacitySnapshot(data);
+        }
         break;
 
       case 'state_update':
@@ -272,6 +348,13 @@ class GameProvider extends ChangeNotifier {
       case 'error':
         errorMessage = data['message']?.toString() ?? 'Error desconocido.';
         supportErrorCode = _extractSupportCode(data);
+        if (_isCheckingRoomCapacity) {
+          _syncRoomCapacitySnapshot(data);
+          if (supportErrorCode == 'ROOM-FULL' &&
+              _lastCapacityCheckedPlayers == null) {
+            _lastCapacityCheckedPlayers = maxRoomPlayers;
+          }
+        }
         if (_isCriticalServerError(data)) {
           connectionStatus = ConnectionStatus.critical;
           isRoundPaused = true;
@@ -308,6 +391,24 @@ class GameProvider extends ChangeNotifier {
 
     final rawPlayers = state['players'];
     players = _parsePlayers(rawPlayers, hostId);
+
+    _syncRoomCapacitySnapshot(state, stopChecking: false);
+
+    final normalizedStateRoom = roomCode.trim().toUpperCase();
+    if (_awaitingPlayerJoinValidation && !isSpectator) {
+      final samePendingRoom =
+          _pendingPlayerJoinCode.isEmpty ||
+          _pendingPlayerJoinCode == normalizedStateRoom;
+      if (samePendingRoom) {
+        if (players.length > maxRoomPlayers) {
+          _rejectJoinBecauseRoomIsFull(normalizedStateRoom, players.length);
+          return;
+        }
+        _awaitingPlayerJoinValidation = false;
+        _pendingPlayerJoinCode = '';
+        _appendActivity('Ingreso validado: cupo disponible en sala $roomCode.');
+      }
+    }
 
     final rawSpectators = state['spectators'];
     spectators = _parseSpectators(rawSpectators);
@@ -702,6 +803,18 @@ class GameProvider extends ChangeNotifier {
     }
 
     final msg = (data['message']?.toString() ?? '').toLowerCase();
+    if ((msg.contains('unknown variant') && msg.contains('room_status')) ||
+        (msg.contains('expected one of') && msg.contains('join_room'))) {
+      return 'ROOM-CHECK-UNSUPPORTED';
+    }
+    if ((msg.contains('room') && msg.contains('full')) ||
+        msg.contains('sala llena') ||
+        msg.contains('cupo lleno') ||
+        msg.contains('aforo completo') ||
+        (msg.contains('maximo') && msg.contains('jugador')) ||
+        msg.contains('capacity')) {
+      return 'ROOM-FULL';
+    }
     if (msg.contains('room') &&
         (msg.contains('invalid') ||
             msg.contains('invalido') ||
@@ -753,6 +866,8 @@ class GameProvider extends ChangeNotifier {
   void createRoom(String name) {
     playerName = name;
     isSpectator = false;
+    _awaitingPlayerJoinValidation = false;
+    _pendingPlayerJoinCode = '';
     errorMessage = null;
     supportErrorCode = null;
     _socket.sendMessage({'type': 'create_room', 'player_name': name});
@@ -760,36 +875,74 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void checkRoomCapacity(String code) {
+    final normalizedCode = code.trim().toUpperCase();
+
+    if (normalizedCode.length != 6) {
+      resetRoomCapacityProbe();
+      return;
+    }
+
+    _lastCapacityCheckedRoomCode = normalizedCode;
+    _isCheckingRoomCapacity = false;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
+  }
+
+  void resetRoomCapacityProbe() {
+    final hadValue =
+        _isCheckingRoomCapacity || _lastCapacityCheckedPlayers != null;
+    _isCheckingRoomCapacity = false;
+    _lastCapacityCheckedPlayers = null;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
+    if (hadValue) {
+      notifyListeners();
+    }
+  }
+
   void joinRoom(String name, String code) {
+    final normalizedCode = code.trim().toUpperCase();
     playerName = name;
-    roomCode = code;
+    roomCode = normalizedCode;
     isSpectator = false;
+    _awaitingPlayerJoinValidation = true;
+    _pendingPlayerJoinCode = normalizedCode;
+    _isCheckingRoomCapacity = false;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
     errorMessage = null;
     supportErrorCode = null;
     _socket.sendMessage({
       'type': 'join_room',
       'player_name': name,
-      'room_code': code,
+      'room_code': normalizedCode,
     });
-    _appendActivity('Intentando unirse a sala $code.');
+    _appendActivity('Intentando unirse a sala $normalizedCode.');
     notifyListeners();
   }
 
   void joinAsSpectator(String name, String code) {
+    final normalizedCode = code.trim().toUpperCase();
     playerName = name;
-    roomCode = code;
+    roomCode = normalizedCode;
     isHost = false;
     isSpectator = true;
+    _awaitingPlayerJoinValidation = false;
+    _pendingPlayerJoinCode = '';
+    _isCheckingRoomCapacity = false;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
     errorMessage = null;
     supportErrorCode = null;
 
     _socket.sendMessage({
       'type': 'join_as_spectator',
       'spectator_name': name,
-      'room_code': code,
+      'room_code': normalizedCode,
     });
 
-    _appendActivity('Intentando unirse como espectador a sala $code.');
+    _appendActivity('Intentando unirse como espectador a sala $normalizedCode.');
     notifyListeners();
   }
 
@@ -998,6 +1151,13 @@ class GameProvider extends ChangeNotifier {
     isRoundPaused = false;
     supportErrorCode = null;
     activityFeed = [];
+    _lastCapacityCheckedRoomCode = '';
+    _lastCapacityCheckedPlayers = null;
+    _isCheckingRoomCapacity = false;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
+    _awaitingPlayerJoinValidation = false;
+    _pendingPlayerJoinCode = '';
     _myDice = [];
     _lastServerPhase = null;
     _myHasRolled = false;
@@ -1095,9 +1255,64 @@ class GameProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _roomCapacityTimeout?.cancel();
     _socketSub?.cancel();
     _socket.disconnect();
     super.dispose();
+  }
+
+  void _syncRoomCapacitySnapshot(
+    Map<String, dynamic> payload, {
+    bool stopChecking = true,
+  }) {
+    final snapshotCode = payload['room_code']?.toString().trim().toUpperCase();
+    if (snapshotCode != null && snapshotCode.isNotEmpty) {
+      _lastCapacityCheckedRoomCode = snapshotCode;
+    }
+
+    final rawPlayers = payload['players'];
+    int? playersCount;
+    if (rawPlayers is List) {
+      playersCount = rawPlayers.whereType<Map>().length;
+    }
+
+    playersCount ??= (payload['players_count'] as num?)?.toInt();
+    playersCount ??= (payload['player_count'] as num?)?.toInt();
+    playersCount ??= (payload['current_players'] as num?)?.toInt();
+
+    if (playersCount != null) {
+      _lastCapacityCheckedPlayers = playersCount;
+    }
+
+    if (stopChecking) {
+      _isCheckingRoomCapacity = false;
+      _roomCapacityTimeout?.cancel();
+      _roomCapacityTimeout = null;
+    }
+  }
+
+  void _rejectJoinBecauseRoomIsFull(String normalizedRoomCode, int playersCount) {
+    _awaitingPlayerJoinValidation = false;
+    _pendingPlayerJoinCode = '';
+    _lastCapacityCheckedRoomCode = normalizedRoomCode;
+    _lastCapacityCheckedPlayers = playersCount;
+
+    roomCode = normalizedRoomCode;
+    playerId = '';
+    isHost = false;
+    isSpectator = false;
+    phase = RoomPhase.initial;
+    players = const [];
+    spectators = const [];
+    errorMessage =
+        'La sala ya alcanzo su limite de $maxRoomPlayers jugadores (incluyendo host). Entra en modo espectador.';
+    supportErrorCode = 'ROOM-FULL';
+    _appendActivity('Ingreso bloqueado: sala $normalizedRoomCode llena ($playersCount/$maxRoomPlayers).');
+
+    // Reinicia la sesion de socket para no mantener una afiliacion invalida de sala.
+    _socketSub?.cancel();
+    _socket.disconnect();
+    _connectSocket();
   }
 }
 

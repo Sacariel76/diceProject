@@ -147,6 +147,7 @@ class _GameTableScreenState extends State<GameTableScreen> {
                 _DiceZone(
                   title: 'Tu torre oculta',
                   dice: gp.hiddenDice,
+                  useHiddenTowerColors: true,
                   emptyLabel: 'Sin dados ocultos sincronizados.',
                 ),
                 const SizedBox(height: 18),
@@ -322,14 +323,21 @@ class _PhaseChip extends StatelessWidget {
 }
 
 class _DiceZone extends StatelessWidget {
+  static const Color _hiddenTowerRedFace = AppColors.tertiaryContainer;
+  static const Color _hiddenTowerRedDot = AppColors.onTertiaryContainer;
+  static const Color _hiddenTowerBlueFace = Color(0xFF164B9E);
+  static const Color _hiddenTowerBlueDot = Color(0xFFDDE7FF);
+
   final String title;
   final List<int> dice;
   final String emptyLabel;
+  final bool useHiddenTowerColors;
 
   const _DiceZone({
     required this.title,
     required this.dice,
     required this.emptyLabel,
+    this.useHiddenTowerColors = false,
   });
 
   @override
@@ -368,9 +376,21 @@ class _DiceZone extends StatelessWidget {
             Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: dice
-                  .map((value) => DiceWidget(value: value, size: 56))
-                  .toList(),
+              children: dice.asMap().entries.map((entry) {
+                final index = entry.key;
+                final value = entry.value;
+                if (!useHiddenTowerColors) {
+                  return DiceWidget(value: value, size: 56);
+                }
+
+                final isLeft = index % 2 == 0;
+                return DiceWidget(
+                  value: value,
+                  size: 56,
+                  faceColor: isLeft ? _hiddenTowerRedFace : _hiddenTowerBlueFace,
+                  dotColor: isLeft ? _hiddenTowerRedDot : _hiddenTowerBlueDot,
+                );
+              }).toList(),
             ),
         ],
       ),

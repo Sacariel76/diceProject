@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../models/player_model.dart';
 import '../../state/game_provider.dart';
+import '../../utils/room_code_clipboard.dart';
 import '../../widgets/common/bottom_nav_bar.dart';
 
 class RoomGuestScreen extends StatefulWidget {
@@ -56,20 +56,57 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
     }
   }
 
-  void _copyCode(String code) {
-    Clipboard.setData(ClipboardData(text: code));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Código copiado',
-          style: GoogleFonts.manrope(fontSize: 13),
+  Future<void> _copyCode(String code) async {
+    if (code.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No hay codigo para copiar todavia',
+            style: GoogleFonts.manrope(fontSize: 13),
+          ),
+          backgroundColor: AppColors.surfaceContainerHigh,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        backgroundColor: AppColors.surfaceContainerHigh,
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+      );
+      return;
+    }
+
+    try {
+      await copyRoomCodeToClipboard(code);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Codigo copiado',
+            style: GoogleFonts.manrope(fontSize: 13),
+          ),
+          backgroundColor: AppColors.surfaceContainerHigh,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se pudo copiar el codigo',
+            style: GoogleFonts.manrope(fontSize: 13),
+          ),
+          backgroundColor: AppColors.tertiaryContainer,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
   }
 
   @override
@@ -78,6 +115,7 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
     final spectators = gp.spectators;
     final me = gp.players.where((p) => p.id == gp.playerId);
     final isReady = me.isNotEmpty && me.first.isReady;
+    final isSpectator = gp.isSpectator;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -267,7 +305,7 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
 
                   // Botón Ready
                   GestureDetector(
-                    onTap: isReady ? null : _toggleReady,
+                    onTap: isReady || isSpectator ? null : _toggleReady,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       width: double.infinity,
@@ -288,7 +326,9 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            isReady
+                            isSpectator
+                                ? Icons.visibility
+                                : isReady
                                 ? Icons.check_circle
                                 : Icons.check_circle_outline,
                             color: AppColors.primary,
@@ -296,7 +336,9 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            isReady ? 'LISTO' : 'READY',
+                            isSpectator
+                                ? 'ESPECTADOR'
+                                : (isReady ? 'LISTO' : 'READY'),
                             style: GoogleFonts.newsreader(
                               fontSize: 28,
                               fontWeight: FontWeight.w700,
@@ -324,7 +366,9 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Waiting for Croupier to start...',
+                        isSpectator
+                            ? 'Modo espectador: observando la partida.'
+                            : 'Waiting for Croupier to start...',
                         style: GoogleFonts.manrope(
                           fontSize: 13,
                           fontStyle: FontStyle.italic,
