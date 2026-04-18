@@ -7,8 +7,54 @@ import '../../models/round_score_model.dart';
 import '../../state/game_provider.dart';
 import '../../widgets/common/app_top_bar.dart';
 
-class RoundResultsScreen extends StatelessWidget {
+class RoundResultsScreen extends StatefulWidget {
   const RoundResultsScreen({super.key});
+
+  @override
+  State<RoundResultsScreen> createState() => _RoundResultsScreenState();
+}
+
+class _RoundResultsScreenState extends State<RoundResultsScreen> {
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_handlePhaseNavigation);
+      _listenerAttached = true;
+      _handlePhaseNavigation();
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_listenerAttached) {
+      _gp.removeListener(_handlePhaseNavigation);
+    }
+    super.dispose();
+  }
+
+  void _handlePhaseNavigation() {
+    if (!mounted) {
+      return;
+    }
+
+    final gp = _gp;
+    if (gp.gameTurnPhase == GameTurnPhase.finalResults) {
+      context.go('/final-results');
+      return;
+    }
+
+    if (gp.gameTurnPhase != GameTurnPhase.roundResults) {
+      context.go('/game-table');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +157,20 @@ class RoundResultsScreen extends StatelessWidget {
                       gp.continueAfterRoundResults();
                       if (gp.gameTurnPhase == GameTurnPhase.finalResults) {
                         context.go('/final-results');
+                        return;
+                      }
+                      if (gp.gameTurnPhase == GameTurnPhase.roundResults) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Esperando al servidor para iniciar la siguiente fase.',
+                              style: GoogleFonts.manrope(fontSize: 12),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: AppColors.surfaceContainerHigh,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
                       } else {
                         context.go('/game-table');
                       }
@@ -123,7 +183,9 @@ class RoundResultsScreen extends StatelessWidget {
                     child: Text(
                       gp.currentRound >= gp.totalRounds
                           ? 'Ver cierre final'
-                          : 'Siguiente ronda',
+                          : (gp.gameTurnPhase == GameTurnPhase.roundResults
+                                ? 'Esperando siguiente ronda...'
+                                : 'Volver a mesa'),
                       style: GoogleFonts.manrope(
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.2,
@@ -147,6 +209,10 @@ class _ResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bonusLabel = score.bonusPoints > 0
+        ? ' (+${score.bonusPoints} bonus)'
+        : '';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -163,7 +229,7 @@ class _ResultRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              score.combination,
+              '${score.combination}$bonusLabel',
               style: GoogleFonts.manrope(
                 fontSize: 12,
                 color: AppColors.onSurfaceVariant,

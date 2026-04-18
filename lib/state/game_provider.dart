@@ -26,6 +26,12 @@ enum GameTurnPhase {
 }
 
 class GameProvider extends ChangeNotifier {
+  static const String _codeConnInit = 'CONN-INIT';
+  static const String _codeConnClosed = 'CONN-CLOSED';
+  static const String _codeConnStream = 'CONN-STREAM';
+  static const String _codeConnCritical = 'CONN-CRITICAL';
+  static const String _codeWsError = 'WS-ERROR';
+
   final WebSocketService _socket = WebSocketService();
   StreamSubscription<Map<String, dynamic>>? _socketSub;
   final Completer<void> _initializationCompleter = Completer<void>();
@@ -167,6 +173,7 @@ class GameProvider extends ChangeNotifier {
     if (!_socket.isConnected) {
       connectionStatus = ConnectionStatus.disconnected;
       errorMessage = _socket.lastError ?? 'No se pudo establecer la conexion.';
+      supportErrorCode = _codeConnInit;
       _markInitialized();
       notifyListeners();
       return;
@@ -193,8 +200,18 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _handleDone() {
-    connectionStatus = ConnectionStatus.disconnected;
-    errorMessage = 'Conexion cerrada por el servidor.';
+    if (phase == RoomPhase.playing) {
+      connectionStatus = ConnectionStatus.critical;
+      errorMessage =
+          'La conexion se cerro durante la partida activa. Reintenta o sal de forma segura.';
+      supportErrorCode = _codeConnCritical;
+      isRoundPaused = true;
+      _appendActivity('Desconexion critica detectada en partida activa.');
+    } else {
+      connectionStatus = ConnectionStatus.disconnected;
+      errorMessage = 'Conexion cerrada por el servidor.';
+      supportErrorCode = _codeConnClosed;
+    }
     notifyListeners();
   }
 
@@ -254,8 +271,11 @@ class GameProvider extends ChangeNotifier {
 
       case 'error':
         errorMessage = data['message']?.toString() ?? 'Error desconocido.';
-        supportErrorCode =
-            data['code']?.toString() ?? data['error_code']?.toString();
+        supportErrorCode = _extractSupportCode(data);
+        if (_isCriticalServerError(data)) {
+          connectionStatus = ConnectionStatus.critical;
+          isRoundPaused = true;
+        }
         _appendActivity(errorMessage ?? 'Error');
         break;
 
@@ -325,16 +345,19 @@ class GameProvider extends ChangeNotifier {
       _lastServerPhase = rawPhase;
     }
 
-    totalScores = _parseTotalScores(rawPlayers);
-    roundScores = _parseRoundScores(rawPlayers);
-
     final lastResult = state['last_result'];
+    totalScores = _parseTotalScores(rawPlayers);
+    roundScores = _parseRoundScores(rawPlayers, lastResult);
+
     tieDetected = false;
     tieMessage = null;
     if (lastResult is Map) {
       tieDetected = lastResult['tie'] as bool? ?? false;
       if (tieDetected) {
-        tieMessage = 'Empate tecnico detectado en presentacion actual.';
+        tieMessage =
+            lastResult['tie_message']?.toString() ??
+            lastResult['tie_reason']?.toString() ??
+            'Empate tecnico detectado en presentacion actual.';
       }
     }
 
@@ -511,7 +534,15 @@ class GameProvider extends ChangeNotifier {
     return totals;
   }
 
-  List<RoundScoreModel> _parseRoundScores(dynamic rawPlayers) {
+  List<RoundScoreModel> _parseRoundScores(
+    dynamic rawPlayers,
+    dynamic lastResult,
+  ) {
+    final fromLastResult = _parseRoundScoresFromLastResult(lastResult);
+    if (fromLastResult.isNotEmpty) {
+      return fromLastResult;
+    }
+
     if (rawPlayers is! List) {
       return const [];
     }
@@ -535,6 +566,73 @@ class GameProvider extends ChangeNotifier {
     }).toList();
   }
 
+  List<RoundScoreModel> _parseRoundScoresFromLastResult(dynamic lastResult) {
+    if (lastResult is! Map) {
+      return const [];
+    }
+
+    final map = lastResult.cast<String, dynamic>();
+    final candidates = [
+      map['round_scores'],
+      map['scores'],
+      map['results'],
+      map['player_results'],
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is! List) {
+        continue;
+      }
+
+      final parsed = candidate
+          .whereType<Map>()
+          .map((dynamic raw) {
+            final row = raw.cast<String, dynamic>();
+            final id =
+                row['player_id']?.toString() ?? row['id']?.toString() ?? '';
+            final name =
+                row['player_name']?.toString() ??
+                row['name']?.toString() ??
+                'Jugador';
+            final combination =
+                row['combination']?.toString() ??
+                row['hand']?.toString() ??
+                row['rank']?.toString() ??
+                'Ronda';
+
+            final base =
+                (row['base_points'] as num?)?.toInt() ??
+                (row['score_base'] as num?)?.toInt() ??
+                (row['score_round'] as num?)?.toInt() ??
+                0;
+            final bonus =
+                (row['bonus_points'] as num?)?.toInt() ??
+                (row['prediction_bonus'] as num?)?.toInt() ??
+                0;
+            final total =
+                (row['total_points'] as num?)?.toInt() ??
+                (row['score_total'] as num?)?.toInt();
+
+            final normalizedBase = total != null ? total - bonus : base;
+
+            return RoundScoreModel(
+              playerId: id,
+              playerName: name,
+              combination: combination,
+              basePoints: normalizedBase,
+              bonusPoints: bonus,
+            );
+          })
+          .toList(growable: false);
+
+      if (parsed.isNotEmpty) {
+        return parsed;
+      }
+    }
+
+    return const [];
+  }
+
   GameTurnPhase _mapServerPhaseToTurn(String? rawPhase) {
     switch (rawPhase) {
       case 'RollingDice':
@@ -556,11 +654,77 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _handleError(dynamic error) {
-    connectionStatus = ConnectionStatus.disconnected;
-    errorMessage = 'Error de conexion: $error';
-    supportErrorCode = 'CONN-ERROR';
-    _appendActivity('Error de conexion detectado.');
+    if (phase == RoomPhase.playing) {
+      connectionStatus = ConnectionStatus.critical;
+      errorMessage = 'Error de conexion en partida activa: $error';
+      supportErrorCode = _codeConnCritical;
+      isRoundPaused = true;
+      _appendActivity('Error critico de conexion en partida activa.');
+    } else {
+      connectionStatus = ConnectionStatus.disconnected;
+      errorMessage = 'Error de conexion: $error';
+      supportErrorCode = _codeConnStream;
+      _appendActivity('Error de conexion detectado.');
+    }
     notifyListeners();
+  }
+
+  bool _isCriticalServerError(Map<String, dynamic> data) {
+    final criticalFlag = data['critical'] as bool? ?? false;
+    if (criticalFlag) {
+      return true;
+    }
+
+    final code =
+        data['code']?.toString().trim().toUpperCase() ??
+        data['error_code']?.toString().trim().toUpperCase() ??
+        '';
+    if (code.startsWith('CRITICAL') ||
+        code == 'SESSION-LOST' ||
+        code == 'ROOM-CLOSED') {
+      return true;
+    }
+
+    final msg = (data['message']?.toString() ?? '').toLowerCase();
+    return msg.contains('session lost') ||
+        msg.contains('sesion perdida') ||
+        msg.contains('room closed') ||
+        msg.contains('sala cerrada');
+  }
+
+  String _extractSupportCode(Map<String, dynamic> data) {
+    final directCode =
+        data['code']?.toString().trim().toUpperCase() ??
+        data['error_code']?.toString().trim().toUpperCase() ??
+        '';
+    if (directCode.isNotEmpty) {
+      return directCode;
+    }
+
+    final msg = (data['message']?.toString() ?? '').toLowerCase();
+    if (msg.contains('room') &&
+        (msg.contains('invalid') ||
+            msg.contains('invalido') ||
+            msg.contains('not found') ||
+            msg.contains('no existe'))) {
+      return 'ROOM-NOT-FOUND';
+    }
+    if (msg.contains('prediction') || msg.contains('predic')) {
+      return 'PREDICTION-INVALID';
+    }
+    if (msg.contains('combination') || msg.contains('combinacion')) {
+      return 'COMBINATION-INVALID';
+    }
+    if (msg.contains('dice') || msg.contains('dado')) {
+      return 'DICE-INVALID';
+    }
+    if (msg.contains('turn') || msg.contains('turno')) {
+      return 'TURN-NOT-ALLOWED';
+    }
+    if (msg.contains('phase') || msg.contains('fase')) {
+      return 'PHASE-INVALID';
+    }
+    return _codeWsError;
   }
 
   void _appendActivity(String entry) {
@@ -763,8 +927,6 @@ class GameProvider extends ChangeNotifier {
     if (expectedPredictions == 0 && players.isNotEmpty) {
       expectedPredictions = players.length;
     }
-    submittedPredictions = submittedPredictions + 1;
-
     _socket.sendMessage({
       'type': 'select_prediction',
       'room_code': roomCode,
@@ -778,11 +940,6 @@ class GameProvider extends ChangeNotifier {
 
   void setPredictionDraft(String card) {
     selectedPrediction = card;
-    notifyListeners();
-  }
-
-  void markRoundResultsReadyForPreview() {
-    gameTurnPhase = GameTurnPhase.roundResults;
     notifyListeners();
   }
 
@@ -917,6 +1074,18 @@ class GameProvider extends ChangeNotifier {
     errorMessage = 'No se pudo sincronizar con la sala en este momento.';
     supportErrorCode = 'NET-408';
     infoMessage = 'Error recuperable detectado.';
+    notifyListeners();
+  }
+
+  void seedCriticalDisconnectPreview() {
+    phase = RoomPhase.playing;
+    connectionStatus = ConnectionStatus.critical;
+    errorMessage =
+        'Desconexion critica simulada: la sesion activa no se puede mantener sin reintento.';
+    supportErrorCode = _codeConnCritical;
+    isRoundPaused = true;
+    infoMessage = 'Se activo un escenario de desconexion critica para QA.';
+    _appendActivity('Escenario QA: desconexion critica simulada.');
     notifyListeners();
   }
 
