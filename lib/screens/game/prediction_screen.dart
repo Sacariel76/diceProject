@@ -50,8 +50,15 @@ class _PredictionScreenState extends State<PredictionScreen> {
       return;
     }
 
-    if (!gp.canOpenPrediction && !gp.predictionSubmitted) {
+    if (gp.gameTurnPhase == GameTurnPhase.selecting) {
       context.go('/game-table');
+      return;
+    }
+
+    if (gp.gameTurnPhase == GameTurnPhase.rolling ||
+        gp.gameTurnPhase == GameTurnPhase.waiting) {
+      context.go('/game-table');
+      return;
     }
   }
 
@@ -92,7 +99,7 @@ class _PredictionScreenState extends State<PredictionScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Combinacion presentada: ${widget.combination}',
+                  'Selecciona tu carta secreta para esta ronda.',
                   style: GoogleFonts.manrope(
                     fontSize: 13,
                     color: AppColors.onSurfaceVariant,
@@ -115,7 +122,7 @@ class _PredictionScreenState extends State<PredictionScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Prediccion enviada. Esperando jugadores (${gp.submittedPredictions}/${gp.expectedPredictions == 0 ? gp.players.length : gp.expectedPredictions}).',
+                            'Prediccion enviada. Esperando a que el servidor habilite la presentacion.',
                             style: GoogleFonts.manrope(
                               fontSize: 12,
                               color: AppColors.onSurface,
@@ -188,10 +195,10 @@ class _PredictionScreenState extends State<PredictionScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: gp.gameTurnPhase == GameTurnPhase.roundResults
-                        ? () => context.go('/round-results')
-                        : (gp.gameTurnPhase == GameTurnPhase.selecting
-                              ? () => context.go('/game-table')
+                    onPressed: gp.gameTurnPhase == GameTurnPhase.selecting
+                        ? () => context.go('/game-table')
+                        : (gp.gameTurnPhase == GameTurnPhase.roundResults
+                              ? () => context.go('/round-results')
                               : null),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.secondaryContainer,
@@ -214,7 +221,7 @@ class _PredictionScreenState extends State<PredictionScreen> {
                 const SizedBox(height: 10),
                 Text(
                   gp.predictionSubmitted
-                      ? 'Prediccion enviada. Espera a que los demas jugadores confirmen para avanzar de fase.'
+                      ? 'Prediccion enviada. Cuando la fase cambie a Presentacion, volveras a la mesa.'
                       : 'Tu eleccion se mantiene privada hasta el cierre de ronda.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.manrope(
@@ -231,7 +238,7 @@ class _PredictionScreenState extends State<PredictionScreen> {
   }
 }
 
-const _cards = ['Zero', 'Min', 'More', 'Max'];
+const _cards = ['ZERO', 'MIN', 'MORE', 'MAX'];
 
 class _PredictionCard extends StatelessWidget {
   final String label;
@@ -290,13 +297,13 @@ class _PredictionCard extends StatelessWidget {
 
   String _descriptionFor(String label) {
     switch (label) {
-      case 'Zero':
+      case 'ZERO':
         return 'Espera cero aciertos de prediccion.';
-      case 'Min':
+      case 'MIN':
         return 'Apuesta por resultado minimo controlado.';
-      case 'More':
+      case 'MORE':
         return 'Busca superar el promedio de mesa.';
-      case 'Max':
+      case 'MAX':
         return 'Objetivo de maximo impacto en ronda.';
       default:
         return '';

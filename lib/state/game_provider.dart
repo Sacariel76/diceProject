@@ -832,7 +832,7 @@ class GameProvider extends ChangeNotifier {
     if (!canRollDice) {
       return;
     }
-    gameTurnPhase = GameTurnPhase.rolling;
+
     _socket.sendMessage({
       'type': 'roll_all_dice',
       'room_code': roomCode,
@@ -867,7 +867,6 @@ class GameProvider extends ChangeNotifier {
       return;
     }
 
-    gameTurnPhase = GameTurnPhase.predicting;
     _socket.sendMessage({
       'type': 'submit_combination',
       'room_code': roomCode,
@@ -922,24 +921,29 @@ class GameProvider extends ChangeNotifier {
     if (!canOpenPrediction || predictionSubmitted) {
       return;
     }
-    selectedPrediction = card;
+
+    final normalizedCard = card.trim().toUpperCase();
+
+    selectedPrediction = normalizedCard;
     predictionSubmitted = true;
+
     if (expectedPredictions == 0 && players.isNotEmpty) {
       expectedPredictions = players.length;
     }
+
     _socket.sendMessage({
       'type': 'select_prediction',
       'room_code': roomCode,
       'player_id': playerId,
-      'prediction': card,
+      'prediction': normalizedCard,
     });
-    _appendActivity('Prediccion enviada: $card.');
+    _appendActivity('Prediccion enviada: $normalizedCard.');
 
     notifyListeners();
   }
 
   void setPredictionDraft(String card) {
-    selectedPrediction = card;
+    selectedPrediction = card.trim().toUpperCase();
     notifyListeners();
   }
 
@@ -1028,7 +1032,7 @@ class GameProvider extends ChangeNotifier {
     gameTurnPhase = GameTurnPhase.selecting;
     totalScores = {'p1': 12, 'p2': 9, 'p3': 7};
     selectedCombination = 'Escalera';
-    selectedPrediction = 'More';
+    selectedPrediction = 'MORE';
     predictionSubmitted = true;
     expectedPredictions = 3;
     submittedPredictions = 2;
@@ -1060,7 +1064,7 @@ class GameProvider extends ChangeNotifier {
       ),
     ];
     activityFeed = [
-      'Prediccion enviada: More.',
+      'Prediccion enviada: MORE.',
       'Combinacion enviada: Escalera.',
       'Cambio de turno: Sebastian.',
     ];

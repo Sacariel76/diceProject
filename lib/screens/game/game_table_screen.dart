@@ -73,12 +73,8 @@ class _GameTableScreenState extends State<GameTableScreen> {
       return '/round-results';
     }
 
-    if (gp.gameTurnPhase == GameTurnPhase.predicting &&
-        !gp.predictionSubmitted) {
-      final combination = Uri.encodeComponent(
-        gp.selectedCombination ?? 'Sencillo',
-      );
-      return '/play/prediction?combination=$combination';
+    if (gp.gameTurnPhase == GameTurnPhase.predicting) {
+      return '/play/prediction';
     }
 
     if (gp.gameTurnPhase == GameTurnPhase.selecting) {
