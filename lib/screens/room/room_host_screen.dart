@@ -67,6 +67,8 @@ class _RoomHostScreenState extends State<RoomHostScreen> {
   Widget build(BuildContext context) {
     final gp = context.watch<GameProvider>();
     final canStart = gp.allPlayersReady && gp.players.length >= 2;
+    final spectators = gp.spectators;
+
     final notReadyPlayer = gp.players.firstWhere(
       (p) => !p.isReady,
       orElse: () => const PlayerModel(id: '', name: ''),
@@ -93,7 +95,6 @@ class _RoomHostScreenState extends State<RoomHostScreen> {
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
               child: Column(
                 children: [
-                  // Código de sala
                   Text(
                     'PRIVATE TABLE',
                     style: GoogleFonts.manrope(
@@ -128,6 +129,7 @@ class _RoomHostScreenState extends State<RoomHostScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
+
                   // Lista de jugadores
                   ...gp.players.map(
                     (p) => Padding(
@@ -139,7 +141,8 @@ class _RoomHostScreenState extends State<RoomHostScreen> {
                       ),
                     ),
                   ),
-                  // Slot vacío si hay menos de 4
+
+                  // Slot vacío si hay menos de 4 jugadores
                   if (gp.players.length < 4)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 10),
@@ -193,7 +196,58 @@ class _RoomHostScreenState extends State<RoomHostScreen> {
                         ),
                       ),
                     ),
+
+                  // Lista de espectadores
+                  if (spectators.isNotEmpty) ...[
+                    const SizedBox(height: 28),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'ESPECTADORES',
+                        style: GoogleFonts.manrope(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.outline,
+                          letterSpacing: 2.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLow.withValues(
+                          alpha: 0.65,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.12,
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        children: spectators
+                            .asMap()
+                            .entries
+                            .map(
+                              (entry) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: entry.key == spectators.length - 1
+                                      ? 0
+                                      : 10,
+                                ),
+                                child: _SpectatorRow(name: entry.value),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 32),
+
                   // Controles del host
                   SizedBox(
                     width: double.infinity,
@@ -225,6 +279,7 @@ class _RoomHostScreenState extends State<RoomHostScreen> {
                       ),
                     ),
                   ),
+
                   if (!canStart && notReadyPlayer.id.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Row(
@@ -247,6 +302,7 @@ class _RoomHostScreenState extends State<RoomHostScreen> {
                       ],
                     ),
                   ],
+
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
@@ -372,7 +428,6 @@ class _PlayerRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -409,7 +464,6 @@ class _PlayerRow extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 14),
-          // Nombre y rol
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,7 +514,6 @@ class _PlayerRow extends StatelessWidget {
               ],
             ),
           ),
-          // Estado
           if (player.isReady)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -506,6 +559,70 @@ class _PlayerRow extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SpectatorRow extends StatelessWidget {
+  final String name;
+
+  const _SpectatorRow({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHigh,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.18),
+              ),
+            ),
+            child: const Icon(
+              Icons.visibility_outlined,
+              size: 18,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              name,
+              style: GoogleFonts.manrope(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'WATCHING',
+              style: GoogleFonts.manrope(
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+                letterSpacing: 1.3,
+              ),
+            ),
+          ),
         ],
       ),
     );

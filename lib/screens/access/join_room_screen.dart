@@ -59,6 +59,12 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
     gp.joinRoom(gp.playerName, _code);
   }
 
+  void _onJoinSpectator() {
+  if (!_complete) return;
+  final gp = context.read<GameProvider>();
+  gp.joinAsSpectator(gp.playerName, _code);
+}
+
   @override
   Widget build(BuildContext context) {
     final gp = context.watch<GameProvider>();
@@ -249,6 +255,39 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                               ],
                             ] else
                               const SizedBox(height: 12),
+                            const SizedBox(height: 16),
+                            // Botón
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: _complete ? _onJoinSpectator : null,
+                                icon: const Icon(Icons.login, size: 18),
+                                label: Text(
+                                  'ENTRAR EN MODO ESPECTADOR',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryContainer,
+                                  disabledBackgroundColor: AppColors
+                                      .primaryContainer
+                                      .withValues(alpha: 0.4),
+                                  foregroundColor: _complete
+                                      ? AppColors.primary
+                                      : AppColors.outline,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                              ),
+                            ),
                             const SizedBox(height: 16),
                             // Botón
                             SizedBox(
