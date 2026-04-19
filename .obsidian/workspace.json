@@ -1,0 +1,196 @@
+{
+  "main": {
+    "id": "153ec694b5b06cce",
+    "type": "split",
+    "children": [
+      {
+        "id": "ccbc27fd9619a847",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ee2d81e757981321",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "brain-dice/04-Flujo-Trello.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "04-Flujo-Trello"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "766d2dce3386bea0",
+    "type": "split",
+    "children": [
+      {
+        "id": "f4541a48f2c1ec46",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "409be5bd16044f95",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "3bb9a036a9edfc03",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "de156026ea9b06ee",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "5a62c5e47a13a5ec",
+    "type": "split",
+    "children": [
+      {
+        "id": "d69ef5826032ac6f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "09f8e51da4402812",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "brain-dice/04-Flujo-Trello.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for 04-Flujo-Trello"
+            }
+          },
+          {
+            "id": "3c2cc9a4db942dee",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "brain-dice/04-Flujo-Trello.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from 04-Flujo-Trello"
+            }
+          },
+          {
+            "id": "ed6692226fa03329",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "7428c6fa454b7c1f",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "3f3b4b5a34f0abe6",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "brain-dice/04-Flujo-Trello.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of 04-Flujo-Trello"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "ee2d81e757981321",
+  "lastOpenFiles": [
+    "brain-dice/03-Flujo-GitHub.md",
+    "brain-dice/02-Asignacion-Modulos.md",
+    "brain-dice/00-Index.md",
+    "brain-dice/Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
+    "brain-dice/Sebastian-Rodriguez-Mesen/Implementacion-UI-UX.md",
+    "brain-dice/Sebastian-Rodriguez-Mesen/Checklist-UI-por-Pantalla.md",
+    "brain-dice/Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md"
+  ]
+}
