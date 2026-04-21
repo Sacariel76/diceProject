@@ -144,6 +144,11 @@ class _GameTableScreenState extends State<GameTableScreen> {
                   emptyLabel: 'Aun no se han lanzado dados en esta ronda.',
                 ),
                 const SizedBox(height: 12),
+                _PlayerVisibleDiceSection(
+                  playersDice: gp.tableVisibleDice,
+                  currentPlayerId: gp.playerId,
+                ),
+                const SizedBox(height: 12),
                 _DiceZone(
                   title: 'Tu torre oculta',
                   dice: gp.hiddenDice,
@@ -342,6 +347,8 @@ class _DiceZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gp = context.watch<GameProvider>();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -379,16 +386,24 @@ class _DiceZone extends StatelessWidget {
               children: dice.asMap().entries.map((entry) {
                 final index = entry.key;
                 final value = entry.value;
+
                 if (!useHiddenTowerColors) {
-                  return DiceWidget(value: value, size: 56);
+                  return DiceWidget(
+                    value: value,
+                    size: 56,
+                    animateRoll: gp.gameTurnPhase == GameTurnPhase.rolling,
+                  );
                 }
 
                 final isLeft = index % 2 == 0;
                 return DiceWidget(
                   value: value,
                   size: 56,
-                  faceColor: isLeft ? _hiddenTowerRedFace : _hiddenTowerBlueFace,
+                  faceColor: isLeft
+                      ? const Color(0xFF83000D)
+                      : const Color(0xFF164B9E),
                   dotColor: isLeft ? _hiddenTowerRedDot : _hiddenTowerBlueDot,
+                  animateRoll: gp.gameTurnPhase == GameTurnPhase.rolling,
                 );
               }).toList(),
             ),
@@ -566,6 +581,122 @@ class _ActivityFeed extends StatelessWidget {
                   ),
                 ),
               ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlayerVisibleDiceSection extends StatelessWidget {
+  final List<PlayerVisibleDice> playersDice;
+  final String currentPlayerId;
+
+  const _PlayerVisibleDiceSection({
+    required this.playersDice,
+    required this.currentPlayerId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dados blancos en mesa',
+            style: GoogleFonts.manrope(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.outline,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          if (playersDice.isEmpty)
+            Text(
+              'Aun no hay dados visibles de jugadores.',
+              style: GoogleFonts.manrope(
+                fontSize: 12,
+                color: AppColors.onSurfaceVariant,
+              ),
+            )
+          else
+            Column(
+              children: playersDice.map((p) {
+                final isMe = p.playerId == currentPlayerId;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isMe
+                        ? AppColors.primaryContainer.withValues(alpha: 0.15)
+                        : AppColors.surfaceContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isMe
+                          ? AppColors.primary.withValues(alpha: 0.2)
+                          : AppColors.outlineVariant.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isMe ? '${p.playerName} (Tú)' : p.playerName,
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: isMe
+                              ? AppColors.primary
+                              : AppColors.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      if (p.whiteDice.isEmpty)
+                        Text(
+                          'Sin dados visibles',
+                          style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        )
+                      else
+                      SizedBox(
+                        width: 300, // controla el ancho total del bloque (clave)
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: p.whiteDice.length,
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 7,   // menos espacio vertical
+                            crossAxisSpacing: 7,  // menos espacio horizontal
+                            childAspectRatio: 1,
+                          ),
+                          itemBuilder: (context, index) {
+                            return DiceWidget(
+                              value: p.whiteDice[index],
+                              size: 64, // Controls the dice size
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
         ],
       ),
     );
