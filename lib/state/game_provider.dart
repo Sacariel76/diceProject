@@ -56,6 +56,7 @@ class GameProvider extends ChangeNotifier {
   String currentTurnPlayerId = '';
   GameTurnPhase gameTurnPhase = GameTurnPhase.waiting;
   List<int> visibleDice = [];
+  List<PlayerVisibleDice> tableVisibleDice = [];
   List<int> hiddenDice = [];
   String? selectedCombination;
   String? selectedPrediction;
@@ -162,6 +163,22 @@ class GameProvider extends ChangeNotifier {
         return '';
     }
   }
+
+  String getDieColorByIndex(int index) {
+  if (index < 0 || index >= _myDice.length) {
+    return 'white';
+  }
+
+  final die = _myDice[index];
+
+  if (die.hidden) {
+    // ocultos: rojo y azul
+    if (die.id.startsWith('r')) return 'red';
+    if (die.id.startsWith('b')) return 'blue';
+  }
+
+  return 'white';
+}
 
   String get currentTurnPlayerName {
     if (currentTurnPlayerId.isEmpty) {
@@ -391,6 +408,7 @@ class GameProvider extends ChangeNotifier {
 
     final rawPlayers = state['players'];
     players = _parsePlayers(rawPlayers, hostId);
+    tableVisibleDice = _parseTableVisibleDice(rawPlayers);
 
     _syncRoomCapacitySnapshot(state, stopChecking: false);
 
@@ -602,6 +620,43 @@ class GameProvider extends ChangeNotifier {
       }
     }
   }
+
+  List<PlayerVisibleDice> _parseTableVisibleDice(dynamic rawPlayers) {
+  if (rawPlayers is! List) {
+    return const [];
+  }
+
+  return rawPlayers.whereType<Map>().map((dynamic raw) {
+    final map = raw.cast<String, dynamic>();
+    final id = map['id']?.toString() ?? map['player_id']?.toString() ?? '';
+    final name =
+        map['name']?.toString() ??
+        map['player_name']?.toString() ??
+        'Jugador';
+
+    final rawDice = map['dice'];
+    final whiteDice = <int>[];
+
+    if (rawDice is List) {
+      for (final item in rawDice.whereType<Map>()) {
+        final die = item.cast<String, dynamic>();
+        final color = die['color']?.toString() ?? '';
+        final hidden = die['hidden'] as bool? ?? false;
+        final value = (die['value'] as num?)?.toInt() ?? 0;
+
+        if (color == 'white' && !hidden && value > 0) {
+          whiteDice.add(value);
+        }
+      }
+    }
+
+    return PlayerVisibleDice(
+      playerId: id,
+      playerName: name,
+      whiteDice: whiteDice,
+    );
+  }).toList();
+}
 
   int _countPredictions(dynamic rawPlayers) {
     if (rawPlayers is! List) {
@@ -1327,5 +1382,17 @@ class _DieSnapshot {
     required this.value,
     required this.hidden,
     required this.used,
+  });
+}
+
+class PlayerVisibleDice {
+  final String playerId;
+  final String playerName;
+  final List<int> whiteDice;
+
+  const PlayerVisibleDice({
+    required this.playerId,
+    required this.playerName,
+    required this.whiteDice,
   });
 }
