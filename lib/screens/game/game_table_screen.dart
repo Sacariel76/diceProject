@@ -74,11 +74,13 @@ class _GameTableScreenState extends State<GameTableScreen> {
     }
 
     if (gp.gameTurnPhase == GameTurnPhase.predicting) {
-      return '/play/prediction';
+      return gp.shouldUseSpectatorViews ? '/game-table' : '/play/prediction';
     }
 
     if (gp.gameTurnPhase == GameTurnPhase.selecting) {
-      return '/game-table';
+      return gp.shouldUseSpectatorViews
+          ? '/spectator/presentations'
+          : '/game-table';
     }
 
     return null;
@@ -400,8 +402,8 @@ class _DiceZone extends StatelessWidget {
                   value: value,
                   size: 56,
                   faceColor: isLeft
-                      ? const Color(0xFF83000D)
-                      : const Color(0xFF164B9E),
+                      ? _hiddenTowerRedFace
+                      : _hiddenTowerBlueFace,
                   dotColor: isLeft ? _hiddenTowerRedDot : _hiddenTowerBlueDot,
                   animateRoll: gp.gameTurnPhase == GameTurnPhase.rolling,
                 );
@@ -450,7 +452,7 @@ class _ScorePreview extends StatelessWidget {
               ),
             )
           else
-            ...players.take(4).map((p) {
+            ...players.map((p) {
               final score = totals[p.id] ?? 0;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 6),
