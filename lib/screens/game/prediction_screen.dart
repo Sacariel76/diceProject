@@ -40,6 +40,12 @@ class _PredictionScreenState extends State<PredictionScreen> {
 
     final gp = _gp;
 
+    if (gp.shouldUseSpectatorViews &&
+        gp.gameTurnPhase == GameTurnPhase.predicting) {
+      context.go('/game-table');
+      return;
+    }
+
     if (gp.gameTurnPhase == GameTurnPhase.finalResults) {
       context.go('/final-results');
       return;
@@ -51,7 +57,9 @@ class _PredictionScreenState extends State<PredictionScreen> {
     }
 
     if (gp.gameTurnPhase == GameTurnPhase.selecting) {
-      context.go('/game-table');
+      context.go(
+        gp.shouldUseSpectatorViews ? '/spectator/presentations' : '/game-table',
+      );
       return;
     }
 

@@ -67,6 +67,7 @@ class GameProvider extends ChangeNotifier {
   String? tieMessage;
   List<RoundScoreModel> roundScores = [];
   Map<String, int> totalScores = {};
+  Map<String, int> playerPresentationCounts = {};
   bool isInitializationComplete = false;
   bool isRoundPaused = false;
   String? supportErrorCode;
@@ -88,6 +89,18 @@ class GameProvider extends ChangeNotifier {
   bool get isConnected => _socket.isConnected;
   bool get allPlayersReady => players.length >= 2;
   bool get isCheckingRoomCapacity => _isCheckingRoomCapacity;
+  int get currentPresentationStep => _currentPresentationStep;
+  bool get shouldUseSpectatorViews {
+    if (isSpectator) {
+      return true;
+    }
+
+    if (playerId.isEmpty || players.isEmpty) {
+      return false;
+    }
+
+    return !players.any((p) => p.id == playerId);
+  }
 
   int? roomPlayerCountForCode(String code) {
     final normalized = code.trim().toUpperCase();
@@ -142,7 +155,7 @@ class GameProvider extends ChangeNotifier {
       phase != RoomPhase.playing &&
       players.length >= 2;
 
-  bool get isReadOnlyViewer => isSpectator;
+  bool get isReadOnlyViewer => shouldUseSpectatorViews;
 
   bool get showConnectionBanner =>
       connectionStatus == ConnectionStatus.reconnecting ||
@@ -284,6 +297,7 @@ class GameProvider extends ChangeNotifier {
           ),
         ];
         spectators = [];
+        playerPresentationCounts = {};
         errorMessage = null;
         supportErrorCode = null;
         _appendActivity('Sala creada: $roomCode');
@@ -301,6 +315,7 @@ class GameProvider extends ChangeNotifier {
         _lastCapacityCheckedRoomCode = roomCode.trim().toUpperCase();
         _pendingPlayerJoinCode = _lastCapacityCheckedRoomCode;
         _awaitingPlayerJoinValidation = true;
+        playerPresentationCounts = {};
         errorMessage = null;
         supportErrorCode = null;
         _appendActivity('Ingreso recibido en sala: $roomCode. Validando cupo...');
@@ -318,6 +333,7 @@ class GameProvider extends ChangeNotifier {
         _roomCapacityTimeout?.cancel();
         _roomCapacityTimeout = null;
         _lastCapacityCheckedRoomCode = roomCode.trim().toUpperCase();
+        playerPresentationCounts = {};
         errorMessage = null;
         supportErrorCode = null;
         _appendActivity('Ingreso como espectador a sala: $roomCode');
@@ -454,9 +470,10 @@ class GameProvider extends ChangeNotifier {
     submittedPredictions = _countPredictions(rawPlayers);
     expectedPredictions = players.length;
 
-    final rawPhase = state['current_phase']?.toString();
+    final rawPhase = _extractRawPhase(state);
     gameTurnPhase = _mapServerPhaseToTurn(rawPhase);
-    _currentPresentationStep = _presentationStep(rawPhase);
+    _currentPresentationStep = _presentationStep(rawPhase, state);
+    playerPresentationCounts = _parseSubmittedCombinationsByPlayer(rawPlayers);
     _applyTurnFromServerState(state, rawPhase);
 
     if (_lastServerPhase != rawPhase) {
@@ -495,19 +512,57 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _applyTurnFromServerState(Map<String, dynamic> state, String? rawPhase) {
-    if (rawPhase == 'Presentation2' || rawPhase == 'Presentation3') {
-      final order =
-          (state['turn_order'] as List?)
-              ?.map((e) => e.toString())
-              .toList(growable: false) ??
-          const <String>[];
-      final turnIndex = (state['turn_index'] as num?)?.toInt() ?? 0;
-      if (turnIndex >= 0 && turnIndex < order.length) {
-        currentTurnPlayerId = order[turnIndex];
-        return;
-      }
+    final normalized = _normalizePhaseToken(rawPhase);
+    if (!normalized.startsWith('presentation')) {
+      currentTurnPlayerId = '';
+      return;
     }
+
+    final order =
+        (state['turn_order'] as List?)
+            ?.map((e) => e.toString())
+            .toList(growable: false) ??
+        const <String>[];
+    final turnIndex = (state['turn_index'] as num?)?.toInt();
+    if (turnIndex != null && turnIndex >= 0 && turnIndex < order.length) {
+      currentTurnPlayerId = order[turnIndex];
+      return;
+    }
+
+    final directTurnPlayerId =
+        state['current_turn_player_id']?.toString() ??
+        state['current_player_id']?.toString() ??
+        '';
+    if (directTurnPlayerId.isNotEmpty) {
+      currentTurnPlayerId = directTurnPlayerId;
+      return;
+    }
+
     currentTurnPlayerId = '';
+  }
+
+  String? _extractRawPhase(Map<String, dynamic> state) {
+    final raw =
+        state['current_phase'] ??
+        state['phase'] ??
+        state['turn_phase'] ??
+        state['game_phase'];
+    final value = raw?.toString().trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return value;
+  }
+
+  String _normalizePhaseToken(String? rawPhase) {
+    if (rawPhase == null) {
+      return '';
+    }
+
+    return rawPhase
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]'), '');
   }
 
   List<PlayerModel> _parsePlayers(dynamic rawPlayers, String hostId) {
@@ -576,17 +631,72 @@ class GameProvider extends ChangeNotifier {
     return raw.length;
   }
 
-  int _presentationStep(String? rawPhase) {
-    switch (rawPhase) {
-      case 'Presentation1':
-        return 1;
-      case 'Presentation2':
-        return 2;
-      case 'Presentation3':
-        return 3;
-      default:
-        return 0;
+  Map<String, int> _parseSubmittedCombinationsByPlayer(dynamic rawPlayers) {
+    if (rawPlayers is! List) {
+      return const <String, int>{};
     }
+
+    final counts = <String, int>{};
+    for (final item in rawPlayers.whereType<Map>()) {
+      final map = item.cast<String, dynamic>();
+      final id = map['id']?.toString() ?? map['player_id']?.toString() ?? '';
+      if (id.isEmpty) {
+        continue;
+      }
+
+      final raw = map['combinations_submitted'];
+      if (raw is List) {
+        counts[id] = raw.length;
+      } else {
+        counts[id] = 0;
+      }
+    }
+    return counts;
+  }
+
+  int _presentationStep(String? rawPhase, Map<String, dynamic> state) {
+    final normalized = _normalizePhaseToken(rawPhase);
+
+    if (normalized == 'presentation1') {
+      return 1;
+    }
+    if (normalized == 'presentation2') {
+      return 2;
+    }
+    if (normalized == 'presentation3') {
+      return 3;
+    }
+    if (normalized == 'presentation') {
+      final turnIndex = (state['turn_index'] as num?)?.toInt();
+      if (turnIndex == null) {
+        return 1;
+      }
+      final step = turnIndex + 1;
+      if (step < 1) {
+        return 1;
+      }
+      if (step > 3) {
+        return 3;
+      }
+      return step;
+    }
+
+    final fallbackMatch = RegExp(r'^presentation(\d+)$').firstMatch(normalized);
+    if (fallbackMatch != null) {
+      final parsed = int.tryParse(fallbackMatch.group(1)!);
+      if (parsed == null) {
+        return 0;
+      }
+      if (parsed < 1) {
+        return 1;
+      }
+      if (parsed > 3) {
+        return 3;
+      }
+      return parsed;
+    }
+
+    return 0;
   }
 
   void _syncDiceFromMe(Map<String, dynamic>? meRaw) {
@@ -790,21 +900,27 @@ class GameProvider extends ChangeNotifier {
   }
 
   GameTurnPhase _mapServerPhaseToTurn(String? rawPhase) {
-    switch (rawPhase) {
-      case 'RollingDice':
+    final normalized = _normalizePhaseToken(rawPhase);
+
+    switch (normalized) {
+      case 'rollingdice':
         return GameTurnPhase.rolling;
-      case 'Prediction':
+      case 'prediction':
         return GameTurnPhase.predicting;
-      case 'Presentation1':
-      case 'Presentation2':
-      case 'Presentation3':
+      case 'presentation':
+      case 'presentation1':
+      case 'presentation2':
+      case 'presentation3':
         return GameTurnPhase.selecting;
-      case 'RoundSummary':
+      case 'roundsummary':
         return GameTurnPhase.roundResults;
-      case 'GameOver':
+      case 'gameover':
         return GameTurnPhase.finalResults;
-      case 'WaitingPlayers':
+      case 'waitingplayers':
       default:
+        if (normalized.startsWith('presentation')) {
+          return GameTurnPhase.selecting;
+        }
         return GameTurnPhase.waiting;
     }
   }
@@ -1203,6 +1319,7 @@ class GameProvider extends ChangeNotifier {
     tieMessage = null;
     roundScores = [];
     totalScores = {};
+    playerPresentationCounts = {};
     isRoundPaused = false;
     supportErrorCode = null;
     activityFeed = [];
@@ -1245,7 +1362,9 @@ class GameProvider extends ChangeNotifier {
     currentRound = 2;
     currentTurnPlayerId = 'p1';
     gameTurnPhase = GameTurnPhase.selecting;
+    _currentPresentationStep = 2;
     totalScores = {'p1': 12, 'p2': 9, 'p3': 7};
+    playerPresentationCounts = {'p1': 1, 'p2': 1, 'p3': 0};
     selectedCombination = 'Escalera';
     selectedPrediction = 'MORE';
     predictionSubmitted = true;
