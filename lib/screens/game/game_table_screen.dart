@@ -9,8 +9,82 @@ import '../../widgets/common/app_top_bar.dart';
 import '../../widgets/common/bottom_nav_bar.dart';
 import '../../widgets/game/dice_widget.dart';
 
-class GameTableScreen extends StatelessWidget {
+class GameTableScreen extends StatefulWidget {
   const GameTableScreen({super.key});
+
+  @override
+  State<GameTableScreen> createState() => _GameTableScreenState();
+}
+
+class _GameTableScreenState extends State<GameTableScreen> {
+  String? _lastAutoRoute;
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_handleAutoNavigation);
+      _listenerAttached = true;
+      _handleAutoNavigation();
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_listenerAttached) {
+      _gp.removeListener(_handleAutoNavigation);
+    }
+    super.dispose();
+  }
+
+  void _handleAutoNavigation() {
+    if (!mounted) {
+      return;
+    }
+
+    final gp = _gp;
+    final route = _nextAutoRoute(gp);
+
+    if (route == null) {
+      _lastAutoRoute = null;
+      return;
+    }
+
+    if (route == _lastAutoRoute) {
+      return;
+    }
+
+    _lastAutoRoute = route;
+    context.go(route);
+  }
+
+  String? _nextAutoRoute(GameProvider gp) {
+    if (gp.gameTurnPhase == GameTurnPhase.finalResults) {
+      return '/final-results';
+    }
+
+    if (gp.gameTurnPhase == GameTurnPhase.roundResults) {
+      return '/round-results';
+    }
+
+    if (gp.gameTurnPhase == GameTurnPhase.predicting) {
+      return gp.shouldUseSpectatorViews ? '/game-table' : '/play/prediction';
+    }
+
+    if (gp.gameTurnPhase == GameTurnPhase.selecting) {
+      return gp.shouldUseSpectatorViews
+          ? '/spectator/presentations'
+          : '/game-table';
+    }
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,9 +146,15 @@ class GameTableScreen extends StatelessWidget {
                   emptyLabel: 'Aun no se han lanzado dados en esta ronda.',
                 ),
                 const SizedBox(height: 12),
+                _PlayerVisibleDiceSection(
+                  playersDice: gp.tableVisibleDice,
+                  currentPlayerId: gp.playerId,
+                ),
+                const SizedBox(height: 12),
                 _DiceZone(
                   title: 'Tu torre oculta',
                   dice: gp.hiddenDice,
+                  useHiddenTowerColors: true,
                   emptyLabel: 'Sin dados ocultos sincronizados.',
                 ),
                 const SizedBox(height: 18),
@@ -250,18 +330,27 @@ class _PhaseChip extends StatelessWidget {
 }
 
 class _DiceZone extends StatelessWidget {
+  static const Color _hiddenTowerRedFace = AppColors.tertiaryContainer;
+  static const Color _hiddenTowerRedDot = AppColors.onTertiaryContainer;
+  static const Color _hiddenTowerBlueFace = Color(0xFF164B9E);
+  static const Color _hiddenTowerBlueDot = Color(0xFFDDE7FF);
+
   final String title;
   final List<int> dice;
   final String emptyLabel;
+  final bool useHiddenTowerColors;
 
   const _DiceZone({
     required this.title,
     required this.dice,
     required this.emptyLabel,
+    this.useHiddenTowerColors = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final gp = context.watch<GameProvider>();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -296,9 +385,29 @@ class _DiceZone extends StatelessWidget {
             Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: dice
-                  .map((value) => DiceWidget(value: value, size: 56))
-                  .toList(),
+              children: dice.asMap().entries.map((entry) {
+                final index = entry.key;
+                final value = entry.value;
+
+                if (!useHiddenTowerColors) {
+                  return DiceWidget(
+                    value: value,
+                    size: 56,
+                    animateRoll: gp.gameTurnPhase == GameTurnPhase.rolling,
+                  );
+                }
+
+                final isLeft = index % 2 == 0;
+                return DiceWidget(
+                  value: value,
+                  size: 56,
+                  faceColor: isLeft
+                      ? _hiddenTowerRedFace
+                      : _hiddenTowerBlueFace,
+                  dotColor: isLeft ? _hiddenTowerRedDot : _hiddenTowerBlueDot,
+                  animateRoll: gp.gameTurnPhase == GameTurnPhase.rolling,
+                );
+              }).toList(),
             ),
         ],
       ),
@@ -343,7 +452,7 @@ class _ScorePreview extends StatelessWidget {
               ),
             )
           else
-            ...players.take(4).map((p) {
+            ...players.map((p) {
               final score = totals[p.id] ?? 0;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 6),
@@ -474,6 +583,122 @@ class _ActivityFeed extends StatelessWidget {
                   ),
                 ),
               ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlayerVisibleDiceSection extends StatelessWidget {
+  final List<PlayerVisibleDice> playersDice;
+  final String currentPlayerId;
+
+  const _PlayerVisibleDiceSection({
+    required this.playersDice,
+    required this.currentPlayerId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dados blancos en mesa',
+            style: GoogleFonts.manrope(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.outline,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          if (playersDice.isEmpty)
+            Text(
+              'Aun no hay dados visibles de jugadores.',
+              style: GoogleFonts.manrope(
+                fontSize: 12,
+                color: AppColors.onSurfaceVariant,
+              ),
+            )
+          else
+            Column(
+              children: playersDice.map((p) {
+                final isMe = p.playerId == currentPlayerId;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isMe
+                        ? AppColors.primaryContainer.withValues(alpha: 0.15)
+                        : AppColors.surfaceContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isMe
+                          ? AppColors.primary.withValues(alpha: 0.2)
+                          : AppColors.outlineVariant.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isMe ? '${p.playerName} (Tú)' : p.playerName,
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: isMe
+                              ? AppColors.primary
+                              : AppColors.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      if (p.whiteDice.isEmpty)
+                        Text(
+                          'Sin dados visibles',
+                          style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        )
+                      else
+                      SizedBox(
+                        width: 300, // controla el ancho total del bloque (clave)
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: p.whiteDice.length,
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 7,   // menos espacio vertical
+                            crossAxisSpacing: 7,  // menos espacio horizontal
+                            childAspectRatio: 1,
+                          ),
+                          itemBuilder: (context, index) {
+                            return DiceWidget(
+                              value: p.whiteDice[index],
+                              size: 64, // Controls the dice size
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
         ],
       ),
     );

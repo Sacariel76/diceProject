@@ -26,6 +26,13 @@ enum GameTurnPhase {
 }
 
 class GameProvider extends ChangeNotifier {
+  static const String _codeConnInit = 'CONN-INIT';
+  static const String _codeConnClosed = 'CONN-CLOSED';
+  static const String _codeConnStream = 'CONN-STREAM';
+  static const String _codeConnCritical = 'CONN-CRITICAL';
+  static const String _codeWsError = 'WS-ERROR';
+  static const int maxRoomPlayers = 5;
+
   final WebSocketService _socket = WebSocketService();
   StreamSubscription<Map<String, dynamic>>? _socketSub;
   final Completer<void> _initializationCompleter = Completer<void>();
@@ -34,8 +41,11 @@ class GameProvider extends ChangeNotifier {
   String roomCode = '';
   String playerId = '';
   bool isHost = false;
+  bool isSpectator = false;
   RoomPhase phase = RoomPhase.initial;
   List<PlayerModel> players = [];
+  List<String> spectators = [];
+
   String? errorMessage;
   String? infoMessage;
 
@@ -46,6 +56,7 @@ class GameProvider extends ChangeNotifier {
   String currentTurnPlayerId = '';
   GameTurnPhase gameTurnPhase = GameTurnPhase.waiting;
   List<int> visibleDice = [];
+  List<PlayerVisibleDice> tableVisibleDice = [];
   List<int> hiddenDice = [];
   String? selectedCombination;
   String? selectedPrediction;
@@ -56,10 +67,18 @@ class GameProvider extends ChangeNotifier {
   String? tieMessage;
   List<RoundScoreModel> roundScores = [];
   Map<String, int> totalScores = {};
+  Map<String, int> playerPresentationCounts = {};
   bool isInitializationComplete = false;
   bool isRoundPaused = false;
   String? supportErrorCode;
   List<String> activityFeed = [];
+
+  String _lastCapacityCheckedRoomCode = '';
+  int? _lastCapacityCheckedPlayers;
+  bool _isCheckingRoomCapacity = false;
+  Timer? _roomCapacityTimeout;
+  bool _awaitingPlayerJoinValidation = false;
+  String _pendingPlayerJoinCode = '';
 
   List<_DieSnapshot> _myDice = [];
   String? _lastServerPhase;
@@ -69,25 +88,82 @@ class GameProvider extends ChangeNotifier {
 
   bool get isConnected => _socket.isConnected;
   bool get allPlayersReady => players.length >= 2;
+  bool get isCheckingRoomCapacity => _isCheckingRoomCapacity;
+  int get currentPresentationStep => _currentPresentationStep;
+  bool get shouldUseSpectatorViews {
+    if (isSpectator) {
+      return true;
+    }
+
+    if (playerId.isEmpty || players.isEmpty) {
+      return false;
+    }
+
+    return !players.any((p) => p.id == playerId);
+  }
+
+  int? roomPlayerCountForCode(String code) {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty || normalized != _lastCapacityCheckedRoomCode) {
+      return null;
+    }
+    return _lastCapacityCheckedPlayers;
+  }
+
+  bool isRoomFullForCode(String code) {
+    final count = roomPlayerCountForCode(code);
+    if (count == null) {
+      return false;
+    }
+    return count >= maxRoomPlayers;
+  }
+
+  bool canJoinTableForCode(String code) {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.length != 6) {
+      return false;
+    }
+    return !isRoomFullForCode(normalized);
+  }
+
   bool get isMyTurn =>
-      currentTurnPlayerId.isEmpty || currentTurnPlayerId == playerId;
+      !isSpectator &&
+      (currentTurnPlayerId.isEmpty || currentTurnPlayerId == playerId);
+
   bool get canRollDice =>
+      !isSpectator &&
       phase == RoomPhase.playing &&
       gameTurnPhase == GameTurnPhase.rolling &&
       !_myHasRolled;
+
   bool get canOpenPrediction =>
-      phase == RoomPhase.playing && gameTurnPhase == GameTurnPhase.predicting;
+      !isSpectator &&
+      phase == RoomPhase.playing &&
+      gameTurnPhase == GameTurnPhase.predicting;
+
   bool get canPresentHand =>
+      !isSpectator &&
       phase == RoomPhase.playing &&
       gameTurnPhase == GameTurnPhase.selecting &&
       isMyTurn &&
       (_mySubmittedCount < _currentPresentationStep ||
           _currentPresentationStep == 0);
+
+  bool get canStartGame =>
+      !isSpectator &&
+      isHost &&
+      phase != RoomPhase.playing &&
+      players.length >= 2;
+
+  bool get isReadOnlyViewer => shouldUseSpectatorViews;
+
   bool get showConnectionBanner =>
       connectionStatus == ConnectionStatus.reconnecting ||
       connectionStatus == ConnectionStatus.disconnected;
+
   bool get showCriticalDisconnectModal =>
       connectionStatus == ConnectionStatus.critical;
+
   Future<void> get initializationDone => _initializationCompleter.future;
 
   String get connectionBannerText {
@@ -100,6 +176,22 @@ class GameProvider extends ChangeNotifier {
         return '';
     }
   }
+
+  String getDieColorByIndex(int index) {
+  if (index < 0 || index >= _myDice.length) {
+    return 'white';
+  }
+
+  final die = _myDice[index];
+
+  if (die.hidden) {
+    // ocultos: rojo y azul
+    if (die.id.startsWith('r')) return 'red';
+    if (die.id.startsWith('b')) return 'blue';
+  }
+
+  return 'white';
+}
 
   String get currentTurnPlayerName {
     if (currentTurnPlayerId.isEmpty) {
@@ -144,6 +236,7 @@ class GameProvider extends ChangeNotifier {
     if (!_socket.isConnected) {
       connectionStatus = ConnectionStatus.disconnected;
       errorMessage = _socket.lastError ?? 'No se pudo establecer la conexion.';
+      supportErrorCode = _codeConnInit;
       _markInitialized();
       notifyListeners();
       return;
@@ -170,8 +263,18 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _handleDone() {
-    connectionStatus = ConnectionStatus.disconnected;
-    errorMessage = 'Conexion cerrada por el servidor.';
+    if (phase == RoomPhase.playing) {
+      connectionStatus = ConnectionStatus.critical;
+      errorMessage =
+          'La conexion se cerro durante la partida activa. Reintenta o sal de forma segura.';
+      supportErrorCode = _codeConnCritical;
+      isRoundPaused = true;
+      _appendActivity('Desconexion critica detectada en partida activa.');
+    } else {
+      connectionStatus = ConnectionStatus.disconnected;
+      errorMessage = 'Conexion cerrada por el servidor.';
+      supportErrorCode = _codeConnClosed;
+    }
     notifyListeners();
   }
 
@@ -183,6 +286,7 @@ class GameProvider extends ChangeNotifier {
         roomCode = data['room_code']?.toString() ?? roomCode;
         playerId = data['player_id']?.toString() ?? playerId;
         isHost = true;
+        isSpectator = false;
         phase = RoomPhase.hostWaiting;
         players = [
           PlayerModel(
@@ -192,31 +296,105 @@ class GameProvider extends ChangeNotifier {
             isHost: true,
           ),
         ];
+        spectators = [];
+        playerPresentationCounts = {};
         errorMessage = null;
         supportErrorCode = null;
         _appendActivity('Sala creada: $roomCode');
         break;
+
       case 'room_joined':
         roomCode = data['room_code']?.toString() ?? roomCode;
         playerId = data['player_id']?.toString() ?? playerId;
         isHost = false;
-        phase = RoomPhase.guestWaiting;
+        isSpectator = false;
+        phase = RoomPhase.initial;
+        _isCheckingRoomCapacity = false;
+        _roomCapacityTimeout?.cancel();
+        _roomCapacityTimeout = null;
+        _lastCapacityCheckedRoomCode = roomCode.trim().toUpperCase();
+        _pendingPlayerJoinCode = _lastCapacityCheckedRoomCode;
+        _awaitingPlayerJoinValidation = true;
+        playerPresentationCounts = {};
         errorMessage = null;
         supportErrorCode = null;
-        _appendActivity('Ingreso exitoso a sala: $roomCode');
+        _appendActivity('Ingreso recibido en sala: $roomCode. Validando cupo...');
         break;
+
+      case 'spectator_joined':
+        roomCode = data['room_code']?.toString() ?? roomCode;
+        playerId = data['spectator_id']?.toString() ?? playerId;
+        isHost = false;
+        isSpectator = true;
+        phase = RoomPhase.guestWaiting;
+        _awaitingPlayerJoinValidation = false;
+        _pendingPlayerJoinCode = '';
+        _isCheckingRoomCapacity = false;
+        _roomCapacityTimeout?.cancel();
+        _roomCapacityTimeout = null;
+        _lastCapacityCheckedRoomCode = roomCode.trim().toUpperCase();
+        playerPresentationCounts = {};
+        errorMessage = null;
+        supportErrorCode = null;
+        _appendActivity('Ingreso como espectador a sala: $roomCode');
+        _appendActivity('Modo espectador activado');
+        break;
+
+      case 'join_failed':
+        _awaitingPlayerJoinValidation = false;
+        _pendingPlayerJoinCode = '';
+        errorMessage =
+            data['message']?.toString() ?? 'No fue posible unirse a la sala.';
+        supportErrorCode = _extractSupportCode(data);
+        _syncRoomCapacitySnapshot(data);
+        if (supportErrorCode == 'ROOM-FULL' &&
+            _lastCapacityCheckedPlayers == null) {
+          _lastCapacityCheckedPlayers = maxRoomPlayers;
+          final failedCode =
+              data['room_code']?.toString().trim().toUpperCase() ??
+              roomCode.trim().toUpperCase();
+          if (failedCode.isNotEmpty) {
+            _lastCapacityCheckedRoomCode = failedCode;
+          }
+        }
+        _appendActivity(errorMessage ?? 'No fue posible unirse a la sala.');
+        break;
+
+      case 'room_status':
+      case 'room_info':
+      case 'room_snapshot':
+        final rawState = data['state'];
+        if (rawState is Map) {
+          _syncRoomCapacitySnapshot(rawState.cast<String, dynamic>());
+        } else {
+          _syncRoomCapacitySnapshot(data);
+        }
+        break;
+
       case 'state_update':
         final rawState = data['state'];
         if (rawState is Map) {
           _handleServerState(rawState.cast<String, dynamic>());
         }
         break;
+
       case 'error':
         errorMessage = data['message']?.toString() ?? 'Error desconocido.';
-        supportErrorCode =
-            data['code']?.toString() ?? data['error_code']?.toString();
+        supportErrorCode = _extractSupportCode(data);
+        if (_isCheckingRoomCapacity) {
+          _syncRoomCapacitySnapshot(data);
+          if (supportErrorCode == 'ROOM-FULL' &&
+              _lastCapacityCheckedPlayers == null) {
+            _lastCapacityCheckedPlayers = maxRoomPlayers;
+          }
+        }
+        if (_isCriticalServerError(data)) {
+          connectionStatus = ConnectionStatus.critical;
+          isRoundPaused = true;
+        }
         _appendActivity(errorMessage ?? 'Error');
         break;
+
       default:
         break;
     }
@@ -229,8 +407,10 @@ class GameProvider extends ChangeNotifier {
     currentRound = (state['current_round'] as num?)?.toInt() ?? currentRound;
 
     final hostId = state['host_id']?.toString() ?? '';
-    if (hostId.isNotEmpty && playerId.isNotEmpty) {
+    if (!isSpectator && hostId.isNotEmpty && playerId.isNotEmpty) {
       isHost = hostId == playerId;
+    } else if (isSpectator) {
+      isHost = false;
     }
 
     final started = state['started'] as bool? ?? false;
@@ -244,23 +424,56 @@ class GameProvider extends ChangeNotifier {
 
     final rawPlayers = state['players'];
     players = _parsePlayers(rawPlayers, hostId);
+    tableVisibleDice = _parseTableVisibleDice(rawPlayers);
 
-    final me = players.where((p) => p.id == playerId);
-    if (me.isNotEmpty) {
-      final meRaw = _findPlayerRaw(rawPlayers, playerId);
-      _syncDiceFromMe(meRaw);
-      selectedPrediction = meRaw?['prediction']?.toString();
-      predictionSubmitted = selectedPrediction != null;
-      _myHasRolled = meRaw?['has_rolled'] as bool? ?? false;
-      _mySubmittedCount = _countSubmittedCombinations(meRaw);
+    _syncRoomCapacitySnapshot(state, stopChecking: false);
+
+    final normalizedStateRoom = roomCode.trim().toUpperCase();
+    if (_awaitingPlayerJoinValidation && !isSpectator) {
+      final samePendingRoom =
+          _pendingPlayerJoinCode.isEmpty ||
+          _pendingPlayerJoinCode == normalizedStateRoom;
+      if (samePendingRoom) {
+        if (players.length > maxRoomPlayers) {
+          _rejectJoinBecauseRoomIsFull(normalizedStateRoom, players.length);
+          return;
+        }
+        _awaitingPlayerJoinValidation = false;
+        _pendingPlayerJoinCode = '';
+        _appendActivity('Ingreso validado: cupo disponible en sala $roomCode.');
+      }
+    }
+
+    final rawSpectators = state['spectators'];
+    spectators = _parseSpectators(rawSpectators);
+
+    if (!isSpectator) {
+      final me = players.where((p) => p.id == playerId);
+      if (me.isNotEmpty) {
+        final meRaw = _findPlayerRaw(rawPlayers, playerId);
+        _syncDiceFromMe(meRaw);
+        selectedPrediction = meRaw?['prediction']?.toString();
+        predictionSubmitted = selectedPrediction != null;
+        _myHasRolled = meRaw?['has_rolled'] as bool? ?? false;
+        _mySubmittedCount = _countSubmittedCombinations(meRaw);
+      }
+    } else {
+      _myDice = [];
+      visibleDice = [];
+      hiddenDice = [];
+      selectedPrediction = null;
+      predictionSubmitted = false;
+      _myHasRolled = false;
+      _mySubmittedCount = 0;
     }
 
     submittedPredictions = _countPredictions(rawPlayers);
     expectedPredictions = players.length;
 
-    final rawPhase = state['current_phase']?.toString();
+    final rawPhase = _extractRawPhase(state);
     gameTurnPhase = _mapServerPhaseToTurn(rawPhase);
-    _currentPresentationStep = _presentationStep(rawPhase);
+    _currentPresentationStep = _presentationStep(rawPhase, state);
+    playerPresentationCounts = _parseSubmittedCombinationsByPlayer(rawPlayers);
     _applyTurnFromServerState(state, rawPhase);
 
     if (_lastServerPhase != rawPhase) {
@@ -268,16 +481,19 @@ class GameProvider extends ChangeNotifier {
       _lastServerPhase = rawPhase;
     }
 
-    totalScores = _parseTotalScores(rawPlayers);
-    roundScores = _parseRoundScores(rawPlayers);
-
     final lastResult = state['last_result'];
+    totalScores = _parseTotalScores(rawPlayers);
+    roundScores = _parseRoundScores(rawPlayers, lastResult);
+
     tieDetected = false;
     tieMessage = null;
     if (lastResult is Map) {
       tieDetected = lastResult['tie'] as bool? ?? false;
       if (tieDetected) {
-        tieMessage = 'Empate tecnico detectado en presentacion actual.';
+        tieMessage =
+            lastResult['tie_message']?.toString() ??
+            lastResult['tie_reason']?.toString() ??
+            'Empate tecnico detectado en presentacion actual.';
       }
     }
 
@@ -296,19 +512,57 @@ class GameProvider extends ChangeNotifier {
   }
 
   void _applyTurnFromServerState(Map<String, dynamic> state, String? rawPhase) {
-    if (rawPhase == 'Presentation2' || rawPhase == 'Presentation3') {
-      final order =
-          (state['turn_order'] as List?)
-              ?.map((e) => e.toString())
-              .toList(growable: false) ??
-          const <String>[];
-      final turnIndex = (state['turn_index'] as num?)?.toInt() ?? 0;
-      if (turnIndex >= 0 && turnIndex < order.length) {
-        currentTurnPlayerId = order[turnIndex];
-        return;
-      }
+    final normalized = _normalizePhaseToken(rawPhase);
+    if (!normalized.startsWith('presentation')) {
+      currentTurnPlayerId = '';
+      return;
     }
+
+    final order =
+        (state['turn_order'] as List?)
+            ?.map((e) => e.toString())
+            .toList(growable: false) ??
+        const <String>[];
+    final turnIndex = (state['turn_index'] as num?)?.toInt();
+    if (turnIndex != null && turnIndex >= 0 && turnIndex < order.length) {
+      currentTurnPlayerId = order[turnIndex];
+      return;
+    }
+
+    final directTurnPlayerId =
+        state['current_turn_player_id']?.toString() ??
+        state['current_player_id']?.toString() ??
+        '';
+    if (directTurnPlayerId.isNotEmpty) {
+      currentTurnPlayerId = directTurnPlayerId;
+      return;
+    }
+
     currentTurnPlayerId = '';
+  }
+
+  String? _extractRawPhase(Map<String, dynamic> state) {
+    final raw =
+        state['current_phase'] ??
+        state['phase'] ??
+        state['turn_phase'] ??
+        state['game_phase'];
+    final value = raw?.toString().trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return value;
+  }
+
+  String _normalizePhaseToken(String? rawPhase) {
+    if (rawPhase == null) {
+      return '';
+    }
+
+    return rawPhase
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]'), '');
   }
 
   List<PlayerModel> _parsePlayers(dynamic rawPlayers, String hostId) {
@@ -331,6 +585,22 @@ class GameProvider extends ChangeNotifier {
             map['connected'] as bool? ?? map['is_connected'] as bool? ?? true,
       );
     }).toList();
+  }
+
+  List<String> _parseSpectators(dynamic rawSpectators) {
+    if (rawSpectators is! List) {
+      return [];
+    }
+
+    return rawSpectators
+        .whereType<Map>()
+        .map((dynamic raw) {
+          final map = raw.cast<String, dynamic>();
+          return map['name']?.toString() ??
+              map['spectator_name']?.toString() ??
+              'Espectador';
+        })
+        .toList();
   }
 
   Map<String, dynamic>? _findPlayerRaw(dynamic rawPlayers, String id) {
@@ -361,17 +631,72 @@ class GameProvider extends ChangeNotifier {
     return raw.length;
   }
 
-  int _presentationStep(String? rawPhase) {
-    switch (rawPhase) {
-      case 'Presentation1':
-        return 1;
-      case 'Presentation2':
-        return 2;
-      case 'Presentation3':
-        return 3;
-      default:
-        return 0;
+  Map<String, int> _parseSubmittedCombinationsByPlayer(dynamic rawPlayers) {
+    if (rawPlayers is! List) {
+      return const <String, int>{};
     }
+
+    final counts = <String, int>{};
+    for (final item in rawPlayers.whereType<Map>()) {
+      final map = item.cast<String, dynamic>();
+      final id = map['id']?.toString() ?? map['player_id']?.toString() ?? '';
+      if (id.isEmpty) {
+        continue;
+      }
+
+      final raw = map['combinations_submitted'];
+      if (raw is List) {
+        counts[id] = raw.length;
+      } else {
+        counts[id] = 0;
+      }
+    }
+    return counts;
+  }
+
+  int _presentationStep(String? rawPhase, Map<String, dynamic> state) {
+    final normalized = _normalizePhaseToken(rawPhase);
+
+    if (normalized == 'presentation1') {
+      return 1;
+    }
+    if (normalized == 'presentation2') {
+      return 2;
+    }
+    if (normalized == 'presentation3') {
+      return 3;
+    }
+    if (normalized == 'presentation') {
+      final turnIndex = (state['turn_index'] as num?)?.toInt();
+      if (turnIndex == null) {
+        return 1;
+      }
+      final step = turnIndex + 1;
+      if (step < 1) {
+        return 1;
+      }
+      if (step > 3) {
+        return 3;
+      }
+      return step;
+    }
+
+    final fallbackMatch = RegExp(r'^presentation(\d+)$').firstMatch(normalized);
+    if (fallbackMatch != null) {
+      final parsed = int.tryParse(fallbackMatch.group(1)!);
+      if (parsed == null) {
+        return 0;
+      }
+      if (parsed < 1) {
+        return 1;
+      }
+      if (parsed > 3) {
+        return 3;
+      }
+      return parsed;
+    }
+
+    return 0;
   }
 
   void _syncDiceFromMe(Map<String, dynamic>? meRaw) {
@@ -406,6 +731,43 @@ class GameProvider extends ChangeNotifier {
     }
   }
 
+  List<PlayerVisibleDice> _parseTableVisibleDice(dynamic rawPlayers) {
+  if (rawPlayers is! List) {
+    return const [];
+  }
+
+  return rawPlayers.whereType<Map>().map((dynamic raw) {
+    final map = raw.cast<String, dynamic>();
+    final id = map['id']?.toString() ?? map['player_id']?.toString() ?? '';
+    final name =
+        map['name']?.toString() ??
+        map['player_name']?.toString() ??
+        'Jugador';
+
+    final rawDice = map['dice'];
+    final whiteDice = <int>[];
+
+    if (rawDice is List) {
+      for (final item in rawDice.whereType<Map>()) {
+        final die = item.cast<String, dynamic>();
+        final color = die['color']?.toString() ?? '';
+        final hidden = die['hidden'] as bool? ?? false;
+        final value = (die['value'] as num?)?.toInt() ?? 0;
+
+        if (color == 'white' && !hidden && value > 0) {
+          whiteDice.add(value);
+        }
+      }
+    }
+
+    return PlayerVisibleDice(
+      playerId: id,
+      playerName: name,
+      whiteDice: whiteDice,
+    );
+  }).toList();
+}
+
   int _countPredictions(dynamic rawPlayers) {
     if (rawPlayers is! List) {
       return submittedPredictions;
@@ -438,7 +800,15 @@ class GameProvider extends ChangeNotifier {
     return totals;
   }
 
-  List<RoundScoreModel> _parseRoundScores(dynamic rawPlayers) {
+  List<RoundScoreModel> _parseRoundScores(
+    dynamic rawPlayers,
+    dynamic lastResult,
+  ) {
+    final fromLastResult = _parseRoundScoresFromLastResult(lastResult);
+    if (fromLastResult.isNotEmpty) {
+      return fromLastResult;
+    }
+
     if (rawPlayers is! List) {
       return const [];
     }
@@ -462,32 +832,183 @@ class GameProvider extends ChangeNotifier {
     }).toList();
   }
 
+  List<RoundScoreModel> _parseRoundScoresFromLastResult(dynamic lastResult) {
+    if (lastResult is! Map) {
+      return const [];
+    }
+
+    final map = lastResult.cast<String, dynamic>();
+    final candidates = [
+      map['round_scores'],
+      map['scores'],
+      map['results'],
+      map['player_results'],
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is! List) {
+        continue;
+      }
+
+      final parsed = candidate
+          .whereType<Map>()
+          .map((dynamic raw) {
+            final row = raw.cast<String, dynamic>();
+            final id =
+                row['player_id']?.toString() ?? row['id']?.toString() ?? '';
+            final name =
+                row['player_name']?.toString() ??
+                row['name']?.toString() ??
+                'Jugador';
+            final combination =
+                row['combination']?.toString() ??
+                row['hand']?.toString() ??
+                row['rank']?.toString() ??
+                'Ronda';
+
+            final base =
+                (row['base_points'] as num?)?.toInt() ??
+                (row['score_base'] as num?)?.toInt() ??
+                (row['score_round'] as num?)?.toInt() ??
+                0;
+            final bonus =
+                (row['bonus_points'] as num?)?.toInt() ??
+                (row['prediction_bonus'] as num?)?.toInt() ??
+                0;
+            final total =
+                (row['total_points'] as num?)?.toInt() ??
+                (row['score_total'] as num?)?.toInt();
+
+            final normalizedBase = total != null ? total - bonus : base;
+
+            return RoundScoreModel(
+              playerId: id,
+              playerName: name,
+              combination: combination,
+              basePoints: normalizedBase,
+              bonusPoints: bonus,
+            );
+          })
+          .toList(growable: false);
+
+      if (parsed.isNotEmpty) {
+        return parsed;
+      }
+    }
+
+    return const [];
+  }
+
   GameTurnPhase _mapServerPhaseToTurn(String? rawPhase) {
-    switch (rawPhase) {
-      case 'RollingDice':
+    final normalized = _normalizePhaseToken(rawPhase);
+
+    switch (normalized) {
+      case 'rollingdice':
         return GameTurnPhase.rolling;
-      case 'Prediction':
+      case 'prediction':
         return GameTurnPhase.predicting;
-      case 'Presentation1':
-      case 'Presentation2':
-      case 'Presentation3':
+      case 'presentation':
+      case 'presentation1':
+      case 'presentation2':
+      case 'presentation3':
         return GameTurnPhase.selecting;
-      case 'RoundSummary':
+      case 'roundsummary':
         return GameTurnPhase.roundResults;
-      case 'GameOver':
+      case 'gameover':
         return GameTurnPhase.finalResults;
-      case 'WaitingPlayers':
+      case 'waitingplayers':
       default:
+        if (normalized.startsWith('presentation')) {
+          return GameTurnPhase.selecting;
+        }
         return GameTurnPhase.waiting;
     }
   }
 
   void _handleError(dynamic error) {
-    connectionStatus = ConnectionStatus.disconnected;
-    errorMessage = 'Error de conexion: $error';
-    supportErrorCode = 'CONN-ERROR';
-    _appendActivity('Error de conexion detectado.');
+    if (phase == RoomPhase.playing) {
+      connectionStatus = ConnectionStatus.critical;
+      errorMessage = 'Error de conexion en partida activa: $error';
+      supportErrorCode = _codeConnCritical;
+      isRoundPaused = true;
+      _appendActivity('Error critico de conexion en partida activa.');
+    } else {
+      connectionStatus = ConnectionStatus.disconnected;
+      errorMessage = 'Error de conexion: $error';
+      supportErrorCode = _codeConnStream;
+      _appendActivity('Error de conexion detectado.');
+    }
     notifyListeners();
+  }
+
+  bool _isCriticalServerError(Map<String, dynamic> data) {
+    final criticalFlag = data['critical'] as bool? ?? false;
+    if (criticalFlag) {
+      return true;
+    }
+
+    final code =
+        data['code']?.toString().trim().toUpperCase() ??
+        data['error_code']?.toString().trim().toUpperCase() ??
+        '';
+    if (code.startsWith('CRITICAL') ||
+        code == 'SESSION-LOST' ||
+        code == 'ROOM-CLOSED') {
+      return true;
+    }
+
+    final msg = (data['message']?.toString() ?? '').toLowerCase();
+    return msg.contains('session lost') ||
+        msg.contains('sesion perdida') ||
+        msg.contains('room closed') ||
+        msg.contains('sala cerrada');
+  }
+
+  String _extractSupportCode(Map<String, dynamic> data) {
+    final directCode =
+        data['code']?.toString().trim().toUpperCase() ??
+        data['error_code']?.toString().trim().toUpperCase() ??
+        '';
+    if (directCode.isNotEmpty) {
+      return directCode;
+    }
+
+    final msg = (data['message']?.toString() ?? '').toLowerCase();
+    if ((msg.contains('unknown variant') && msg.contains('room_status')) ||
+        (msg.contains('expected one of') && msg.contains('join_room'))) {
+      return 'ROOM-CHECK-UNSUPPORTED';
+    }
+    if ((msg.contains('room') && msg.contains('full')) ||
+        msg.contains('sala llena') ||
+        msg.contains('cupo lleno') ||
+        msg.contains('aforo completo') ||
+        (msg.contains('maximo') && msg.contains('jugador')) ||
+        msg.contains('capacity')) {
+      return 'ROOM-FULL';
+    }
+    if (msg.contains('room') &&
+        (msg.contains('invalid') ||
+            msg.contains('invalido') ||
+            msg.contains('not found') ||
+            msg.contains('no existe'))) {
+      return 'ROOM-NOT-FOUND';
+    }
+    if (msg.contains('prediction') || msg.contains('predic')) {
+      return 'PREDICTION-INVALID';
+    }
+    if (msg.contains('combination') || msg.contains('combinacion')) {
+      return 'COMBINATION-INVALID';
+    }
+    if (msg.contains('dice') || msg.contains('dado')) {
+      return 'DICE-INVALID';
+    }
+    if (msg.contains('turn') || msg.contains('turno')) {
+      return 'TURN-NOT-ALLOWED';
+    }
+    if (msg.contains('phase') || msg.contains('fase')) {
+      return 'PHASE-INVALID';
+    }
+    return _codeWsError;
   }
 
   void _appendActivity(String entry) {
@@ -515,6 +1036,9 @@ class GameProvider extends ChangeNotifier {
 
   void createRoom(String name) {
     playerName = name;
+    isSpectator = false;
+    _awaitingPlayerJoinValidation = false;
+    _pendingPlayerJoinCode = '';
     errorMessage = null;
     supportErrorCode = null;
     _socket.sendMessage({'type': 'create_room', 'player_name': name});
@@ -522,21 +1046,84 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void checkRoomCapacity(String code) {
+    final normalizedCode = code.trim().toUpperCase();
+
+    if (normalizedCode.length != 6) {
+      resetRoomCapacityProbe();
+      return;
+    }
+
+    _lastCapacityCheckedRoomCode = normalizedCode;
+    _isCheckingRoomCapacity = false;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
+  }
+
+  void resetRoomCapacityProbe() {
+    final hadValue =
+        _isCheckingRoomCapacity || _lastCapacityCheckedPlayers != null;
+    _isCheckingRoomCapacity = false;
+    _lastCapacityCheckedPlayers = null;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
+    if (hadValue) {
+      notifyListeners();
+    }
+  }
+
   void joinRoom(String name, String code) {
+    final normalizedCode = code.trim().toUpperCase();
     playerName = name;
-    roomCode = code;
+    roomCode = normalizedCode;
+    isSpectator = false;
+    _awaitingPlayerJoinValidation = true;
+    _pendingPlayerJoinCode = normalizedCode;
+    _isCheckingRoomCapacity = false;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
     errorMessage = null;
     supportErrorCode = null;
     _socket.sendMessage({
       'type': 'join_room',
       'player_name': name,
-      'room_code': code,
+      'room_code': normalizedCode,
     });
-    _appendActivity('Intentando unirse a sala $code.');
+    _appendActivity('Intentando unirse a sala $normalizedCode.');
+    notifyListeners();
+  }
+
+  void joinAsSpectator(String name, String code) {
+    final normalizedCode = code.trim().toUpperCase();
+    playerName = name;
+    roomCode = normalizedCode;
+    isHost = false;
+    isSpectator = true;
+    _awaitingPlayerJoinValidation = false;
+    _pendingPlayerJoinCode = '';
+    _isCheckingRoomCapacity = false;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
+    errorMessage = null;
+    supportErrorCode = null;
+
+    _socket.sendMessage({
+      'type': 'join_as_spectator',
+      'spectator_name': name,
+      'room_code': normalizedCode,
+    });
+
+    _appendActivity('Intentando unirse como espectador a sala $normalizedCode.');
     notifyListeners();
   }
 
   void setReady() {
+    if (isSpectator) {
+      infoMessage = 'Modo espectador: esta opcion no esta disponible.';
+      notifyListeners();
+      return;
+    }
+
     players = players
         .map((p) => p.id == playerId ? p.copyWith(isReady: true) : p)
         .toList();
@@ -545,6 +1132,12 @@ class GameProvider extends ChangeNotifier {
   }
 
   void startGame() {
+    if (isSpectator) {
+      infoMessage = 'Modo espectador: no puedes iniciar la partida.';
+      notifyListeners();
+      return;
+    }
+
     _socket.sendMessage({
       'type': 'start_game',
       'room_code': roomCode,
@@ -554,10 +1147,16 @@ class GameProvider extends ChangeNotifier {
   }
 
   void rollDice() {
+    if (isSpectator) {
+      infoMessage = 'Modo espectador: no puedes lanzar dados.';
+      notifyListeners();
+      return;
+    }
+
     if (!canRollDice) {
       return;
     }
-    gameTurnPhase = GameTurnPhase.rolling;
+
     _socket.sendMessage({
       'type': 'roll_all_dice',
       'room_code': roomCode,
@@ -568,6 +1167,13 @@ class GameProvider extends ChangeNotifier {
   }
 
   void submitHand(List<int> selectedDice, String combination) {
+    if (isSpectator) {
+      errorMessage = 'Modo espectador: no puedes enviar combinaciones.';
+      supportErrorCode = 'SPEC-SUBMIT';
+      notifyListeners();
+      return;
+    }
+
     if (!canPresentHand) {
       errorMessage = 'Aun no puedes presentar combinacion en esta fase.';
       supportErrorCode = 'PHASE-SUBMIT';
@@ -585,7 +1191,6 @@ class GameProvider extends ChangeNotifier {
       return;
     }
 
-    gameTurnPhase = GameTurnPhase.predicting;
     _socket.sendMessage({
       'type': 'submit_combination',
       'room_code': roomCode,
@@ -631,34 +1236,38 @@ class GameProvider extends ChangeNotifier {
   }
 
   void submitPrediction(String card) {
+    if (isSpectator) {
+      infoMessage = 'Modo espectador: no puedes enviar predicciones.';
+      notifyListeners();
+      return;
+    }
+
     if (!canOpenPrediction || predictionSubmitted) {
       return;
     }
-    selectedPrediction = card;
+
+    final normalizedCard = card.trim().toUpperCase();
+
+    selectedPrediction = normalizedCard;
     predictionSubmitted = true;
+
     if (expectedPredictions == 0 && players.isNotEmpty) {
       expectedPredictions = players.length;
     }
-    submittedPredictions = submittedPredictions + 1;
 
     _socket.sendMessage({
       'type': 'select_prediction',
       'room_code': roomCode,
       'player_id': playerId,
-      'prediction': card,
+      'prediction': normalizedCard,
     });
-    _appendActivity('Prediccion enviada: $card.');
+    _appendActivity('Prediccion enviada: $normalizedCard.');
 
     notifyListeners();
   }
 
   void setPredictionDraft(String card) {
-    selectedPrediction = card;
-    notifyListeners();
-  }
-
-  void markRoundResultsReadyForPreview() {
-    gameTurnPhase = GameTurnPhase.roundResults;
+    selectedPrediction = card.trim().toUpperCase();
     notifyListeners();
   }
 
@@ -690,8 +1299,10 @@ class GameProvider extends ChangeNotifier {
     roomCode = '';
     playerId = '';
     isHost = false;
+    isSpectator = false;
     phase = RoomPhase.initial;
     players = [];
+    spectators = [];
     errorMessage = null;
     infoMessage = null;
     currentRound = 1;
@@ -708,9 +1319,17 @@ class GameProvider extends ChangeNotifier {
     tieMessage = null;
     roundScores = [];
     totalScores = {};
+    playerPresentationCounts = {};
     isRoundPaused = false;
     supportErrorCode = null;
     activityFeed = [];
+    _lastCapacityCheckedRoomCode = '';
+    _lastCapacityCheckedPlayers = null;
+    _isCheckingRoomCapacity = false;
+    _roomCapacityTimeout?.cancel();
+    _roomCapacityTimeout = null;
+    _awaitingPlayerJoinValidation = false;
+    _pendingPlayerJoinCode = '';
     _myDice = [];
     _lastServerPhase = null;
     _myHasRolled = false;
@@ -724,11 +1343,13 @@ class GameProvider extends ChangeNotifier {
     playerId = 'p1';
     roomCode = 'A1B2C3';
     phase = RoomPhase.playing;
+    isSpectator = false;
     players = const [
       PlayerModel(id: 'p1', name: 'Sebastian', isReady: true, isHost: true),
       PlayerModel(id: 'p2', name: 'Luis', isReady: true),
       PlayerModel(id: 'p3', name: 'Samiel', isReady: true),
     ];
+    spectators = const ['Observador 1', 'Observador 2'];
     visibleDice = [1, 3, 5, 2, 6];
     hiddenDice = [4, 2, 6];
     _myDice = const [
@@ -741,9 +1362,11 @@ class GameProvider extends ChangeNotifier {
     currentRound = 2;
     currentTurnPlayerId = 'p1';
     gameTurnPhase = GameTurnPhase.selecting;
+    _currentPresentationStep = 2;
     totalScores = {'p1': 12, 'p2': 9, 'p3': 7};
+    playerPresentationCounts = {'p1': 1, 'p2': 1, 'p3': 0};
     selectedCombination = 'Escalera';
-    selectedPrediction = 'More';
+    selectedPrediction = 'MORE';
     predictionSubmitted = true;
     expectedPredictions = 3;
     submittedPredictions = 2;
@@ -775,7 +1398,7 @@ class GameProvider extends ChangeNotifier {
       ),
     ];
     activityFeed = [
-      'Prediccion enviada: More.',
+      'Prediccion enviada: MORE.',
       'Combinacion enviada: Escalera.',
       'Cambio de turno: Sebastian.',
     ];
@@ -792,11 +1415,78 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void seedCriticalDisconnectPreview() {
+    phase = RoomPhase.playing;
+    connectionStatus = ConnectionStatus.critical;
+    errorMessage =
+        'Desconexion critica simulada: la sesion activa no se puede mantener sin reintento.';
+    supportErrorCode = _codeConnCritical;
+    isRoundPaused = true;
+    infoMessage = 'Se activo un escenario de desconexion critica para QA.';
+    _appendActivity('Escenario QA: desconexion critica simulada.');
+    notifyListeners();
+  }
+
   @override
   void dispose() {
+    _roomCapacityTimeout?.cancel();
     _socketSub?.cancel();
     _socket.disconnect();
     super.dispose();
+  }
+
+  void _syncRoomCapacitySnapshot(
+    Map<String, dynamic> payload, {
+    bool stopChecking = true,
+  }) {
+    final snapshotCode = payload['room_code']?.toString().trim().toUpperCase();
+    if (snapshotCode != null && snapshotCode.isNotEmpty) {
+      _lastCapacityCheckedRoomCode = snapshotCode;
+    }
+
+    final rawPlayers = payload['players'];
+    int? playersCount;
+    if (rawPlayers is List) {
+      playersCount = rawPlayers.whereType<Map>().length;
+    }
+
+    playersCount ??= (payload['players_count'] as num?)?.toInt();
+    playersCount ??= (payload['player_count'] as num?)?.toInt();
+    playersCount ??= (payload['current_players'] as num?)?.toInt();
+
+    if (playersCount != null) {
+      _lastCapacityCheckedPlayers = playersCount;
+    }
+
+    if (stopChecking) {
+      _isCheckingRoomCapacity = false;
+      _roomCapacityTimeout?.cancel();
+      _roomCapacityTimeout = null;
+    }
+  }
+
+  void _rejectJoinBecauseRoomIsFull(String normalizedRoomCode, int playersCount) {
+    _awaitingPlayerJoinValidation = false;
+    _pendingPlayerJoinCode = '';
+    _lastCapacityCheckedRoomCode = normalizedRoomCode;
+    _lastCapacityCheckedPlayers = playersCount;
+
+    roomCode = normalizedRoomCode;
+    playerId = '';
+    isHost = false;
+    isSpectator = false;
+    phase = RoomPhase.initial;
+    players = const [];
+    spectators = const [];
+    errorMessage =
+        'La sala ya alcanzo su limite de $maxRoomPlayers jugadores (incluyendo host). Entra en modo espectador.';
+    supportErrorCode = 'ROOM-FULL';
+    _appendActivity('Ingreso bloqueado: sala $normalizedRoomCode llena ($playersCount/$maxRoomPlayers).');
+
+    // Reinicia la sesion de socket para no mantener una afiliacion invalida de sala.
+    _socketSub?.cancel();
+    _socket.disconnect();
+    _connectSocket();
   }
 }
 
@@ -811,5 +1501,17 @@ class _DieSnapshot {
     required this.value,
     required this.hidden,
     required this.used,
+  });
+}
+
+class PlayerVisibleDice {
+  final String playerId;
+  final String playerName;
+  final List<int> whiteDice;
+
+  const PlayerVisibleDice({
+    required this.playerId,
+    required this.playerName,
+    required this.whiteDice,
   });
 }

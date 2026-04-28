@@ -15,6 +15,8 @@ class JoinRoomScreen extends StatefulWidget {
 class _JoinRoomScreenState extends State<JoinRoomScreen> {
   final _ctrl = TextEditingController();
   final _focusNode = FocusNode();
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
 
   String get _code => _ctrl.text.toUpperCase();
   bool get _complete => _code.length == 6;
@@ -22,16 +24,24 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   @override
   void initState() {
     super.initState();
-    _ctrl.addListener(() => setState(() {}));
+    _ctrl.addListener(_onCodeInputChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GameProvider>().addListener(_onPhaseChange);
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_onPhaseChange);
+      _listenerAttached = true;
       _focusNode.requestFocus();
     });
   }
 
   @override
   void dispose() {
-    context.read<GameProvider>().removeListener(_onPhaseChange);
+    _ctrl.removeListener(_onCodeInputChanged);
+    if (_listenerAttached) {
+      _gp.removeListener(_onPhaseChange);
+    }
     _ctrl.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -39,8 +49,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
 
   void _onPhaseChange() {
     if (!mounted) return;
-    final gp = context.read<GameProvider>();
-    if (gp.phase == RoomPhase.guestWaiting) {
+    if (_gp.phase == RoomPhase.guestWaiting) {
       context.go('/room-guest');
     }
   }
@@ -48,13 +57,37 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   void _onJoin() {
     if (!_complete) return;
     final gp = context.read<GameProvider>();
+    if (!gp.canJoinTableForCode(_code)) {
+      return;
+    }
     gp.joinRoom(gp.playerName, _code);
+  }
+
+  void _onJoinSpectator() {
+    if (!_complete) return;
+    final gp = context.read<GameProvider>();
+    gp.joinAsSpectator(gp.playerName, _code);
+  }
+
+  void _onCodeInputChanged() {
+    setState(() {});
+    if (!_listenerAttached) {
+      return;
+    }
+
+    if (!_complete) {
+      _gp.resetRoomCapacityProbe();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final gp = context.watch<GameProvider>();
     final hasError = gp.errorMessage != null;
+    final currentPlayers = gp.roomPlayerCountForCode(_code);
+    final roomIsFull = gp.isRoomFullForCode(_code);
+    final canJoinTable = _complete && !roomIsFull;
+    final showCapacityInfo = _complete && (roomIsFull || currentPlayers != null);
 
     return Scaffold(
       body: Stack(
@@ -241,12 +274,77 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                               ],
                             ] else
                               const SizedBox(height: 12),
+                            if (showCapacityInfo) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    roomIsFull
+                                        ? Icons.group_off_outlined
+                                        : Icons.groups_2_outlined,
+                                    color: roomIsFull
+                                        ? AppColors.error
+                                        : AppColors.outline,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      roomIsFull
+                                          ? 'Sala llena (${GameProvider.maxRoomPlayers}/${GameProvider.maxRoomPlayers}). Solo puedes entrar en modo espectador.'
+                                          : currentPlayers != null
+                                          ? 'Jugadores en mesa: $currentPlayers/${GameProvider.maxRoomPlayers}.'
+                                          : '',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 11,
+                                        color: roomIsFull
+                                            ? AppColors.error
+                                            : AppColors.outline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 16),
                             // Botón
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
-                                onPressed: _complete ? _onJoin : null,
+                                onPressed: _complete ? _onJoinSpectator : null,
+                                icon: const Icon(Icons.login, size: 18),
+                                label: Text(
+                                  'ENTRAR EN MODO ESPECTADOR',
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryContainer,
+                                  disabledBackgroundColor: AppColors
+                                      .primaryContainer
+                                      .withValues(alpha: 0.4),
+                                  foregroundColor: _complete
+                                      ? AppColors.primary
+                                      : AppColors.outline,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Botón
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: canJoinTable ? _onJoin : null,
                                 icon: const Icon(Icons.login, size: 18),
                                 label: Text(
                                   'ENTRAR A LA MESA',
@@ -261,7 +359,7 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
                                   disabledBackgroundColor: AppColors
                                       .primaryContainer
                                       .withValues(alpha: 0.4),
-                                  foregroundColor: _complete
+                                  foregroundColor: canJoinTable
                                       ? AppColors.primary
                                       : AppColors.outline,
                                   padding: const EdgeInsets.symmetric(

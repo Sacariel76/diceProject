@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../app/app_colors.dart';
 import '../../models/player_model.dart';
 import '../../state/game_provider.dart';
+import '../../utils/room_code_clipboard.dart';
 import '../../widgets/common/bottom_nav_bar.dart';
 
 class RoomGuestScreen extends StatefulWidget {
@@ -16,23 +16,33 @@ class RoomGuestScreen extends StatefulWidget {
 }
 
 class _RoomGuestScreenState extends State<RoomGuestScreen> {
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GameProvider>().addListener(_onPhaseChange);
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_onPhaseChange);
+      _listenerAttached = true;
     });
   }
 
   @override
   void dispose() {
-    context.read<GameProvider>().removeListener(_onPhaseChange);
+    if (_listenerAttached) {
+      _gp.removeListener(_onPhaseChange);
+    }
     super.dispose();
   }
 
   void _onPhaseChange() {
     if (!mounted) return;
-    if (context.read<GameProvider>().phase == RoomPhase.playing) {
+    if (_gp.phase == RoomPhase.playing) {
       context.go('/game-table');
     }
   }
@@ -46,27 +56,66 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
     }
   }
 
-  void _copyCode(String code) {
-    Clipboard.setData(ClipboardData(text: code));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Código copiado',
-          style: GoogleFonts.manrope(fontSize: 13),
+  Future<void> _copyCode(String code) async {
+    if (code.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No hay codigo para copiar todavia',
+            style: GoogleFonts.manrope(fontSize: 13),
+          ),
+          backgroundColor: AppColors.surfaceContainerHigh,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        backgroundColor: AppColors.surfaceContainerHigh,
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+      );
+      return;
+    }
+
+    try {
+      await copyRoomCodeToClipboard(code);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Codigo copiado',
+            style: GoogleFonts.manrope(fontSize: 13),
+          ),
+          backgroundColor: AppColors.surfaceContainerHigh,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se pudo copiar el codigo',
+            style: GoogleFonts.manrope(fontSize: 13),
+          ),
+          backgroundColor: AppColors.tertiaryContainer,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final gp = context.watch<GameProvider>();
+    final spectators = gp.spectators;
     final me = gp.players.where((p) => p.id == gp.playerId);
     final isReady = me.isNotEmpty && me.first.isReady;
+    final isSpectator = gp.isSpectator;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -154,6 +203,7 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
+
                   // Título lista
                   Text(
                     'The Table',
@@ -164,6 +214,7 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+
                   // Lista de jugadores
                   ...gp.players.map(
                     (p) => Padding(
@@ -175,6 +226,7 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                       ),
                     ),
                   ),
+
                   if (gp.players.isEmpty)
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -203,10 +255,57 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                         ],
                       ),
                     ),
+
+                  // Lista de espectadores
+                  if (spectators.isNotEmpty) ...[
+                    const SizedBox(height: 28),
+                    Text(
+                      'Spectators',
+                      style: GoogleFonts.newsreader(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLow.withValues(
+                          alpha: 0.7,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.outlineVariant.withValues(
+                            alpha: 0.12,
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        children: spectators
+                            .asMap()
+                            .entries
+                            .map(
+                              (entry) => Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: entry.key == spectators.length - 1
+                                      ? 0
+                                      : 10,
+                                ),
+                                child: _GuestSpectatorRow(name: entry.value),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 32),
+
                   // Botón Ready
                   GestureDetector(
-                    onTap: isReady ? null : _toggleReady,
+                    onTap: isReady || isSpectator ? null : _toggleReady,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       width: double.infinity,
@@ -227,7 +326,9 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            isReady
+                            isSpectator
+                                ? Icons.visibility
+                                : isReady
                                 ? Icons.check_circle
                                 : Icons.check_circle_outline,
                             color: AppColors.primary,
@@ -235,7 +336,9 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            isReady ? 'LISTO' : 'READY',
+                            isSpectator
+                                ? 'ESPECTADOR'
+                                : (isReady ? 'LISTO' : 'READY'),
                             style: GoogleFonts.newsreader(
                               fontSize: 28,
                               fontWeight: FontWeight.w700,
@@ -248,6 +351,7 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   // Indicador de espera
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -262,7 +366,9 @@ class _RoomGuestScreenState extends State<RoomGuestScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Waiting for Croupier to start...',
+                        isSpectator
+                            ? 'Modo espectador: observando la partida.'
+                            : 'Waiting for Croupier to start...',
                         style: GoogleFonts.manrope(
                           fontSize: 13,
                           fontStyle: FontStyle.italic,
@@ -364,7 +470,6 @@ class _GuestPlayerRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Avatar
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -440,7 +545,6 @@ class _GuestPlayerRow extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 14),
-            // Nombre
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,8 +588,8 @@ class _GuestPlayerRow extends StatelessWidget {
                     showReconnecting
                         ? 'Signal lost'
                         : player.isHost
-                        ? 'Hosting'
-                        : 'Waiting...',
+                            ? 'Hosting'
+                            : 'Waiting...',
                     style: GoogleFonts.manrope(
                       fontSize: 11,
                       color: showReconnecting
@@ -499,7 +603,6 @@ class _GuestPlayerRow extends StatelessWidget {
                 ],
               ),
             ),
-            // Estado
             if (showReconnecting)
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -593,6 +696,70 @@ class _GuestPlayerRow extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _GuestSpectatorRow extends StatelessWidget {
+  final String name;
+
+  const _GuestSpectatorRow({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHigh,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.18),
+              ),
+            ),
+            child: const Icon(
+              Icons.visibility_outlined,
+              size: 18,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              name,
+              style: GoogleFonts.manrope(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'WATCHING',
+              style: GoogleFonts.manrope(
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

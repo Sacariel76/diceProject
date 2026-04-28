@@ -17,6 +17,8 @@ class DiceWidget extends StatelessWidget {
   final Color faceColor;
   final Color dotColor;
   final double rotation;
+  final String color;
+  final bool animateRoll;
 
   const DiceWidget({
     super.key,
@@ -25,20 +27,55 @@ class DiceWidget extends StatelessWidget {
     this.faceColor = AppColors.surfaceContainerHighest,
     this.dotColor = AppColors.secondaryContainer,
     this.rotation = 0,
+    this.color = 'white',
+    this.animateRoll = false
   });
+
+Color getDiceColor() {
+  switch (color) {
+    case 'red':
+      return Color(0xFF83000D);
+    case 'blue':
+      return Color(0xFF164B9E);
+    default:
+      return faceColor;
+  }
+}
+
+Color getResolvedDotColor() {
+  switch (color) {
+    case 'red':
+    case 'blue':
+      return Colors.white;
+    default:
+      return dotColor;
+  }
+}
 
   @override
   Widget build(BuildContext context) {
     final positions = _dotPositions[value.clamp(1, 6)] ?? [4];
     final dotSize = size * 0.15;
 
-    return Transform.rotate(
-      angle: rotation * (3.14159 / 180),
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('${value}_${color}_$animateRoll'),
+      tween: Tween<double>(
+        begin: animateRoll ? 2.0 : 0.0,
+        end: 0.0,
+      ),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+      builder: (context, animatedTurns, child) {
+        return Transform.rotate(
+          angle: (rotation + animatedTurns) * (3.14159 / 180),
+          child: child,
+        );
+      },
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: faceColor,
+          color: getDiceColor(),
           borderRadius: BorderRadius.circular(size * 0.18),
           border: Border.all(
             color: AppColors.outlineVariant.withValues(alpha: 0.1),
@@ -65,7 +102,7 @@ class DiceWidget extends StatelessWidget {
                         width: dotSize,
                         height: dotSize,
                         decoration: BoxDecoration(
-                          color: dotColor,
+                          color: getResolvedDotColor(),
                           shape: BoxShape.circle,
                         ),
                       )

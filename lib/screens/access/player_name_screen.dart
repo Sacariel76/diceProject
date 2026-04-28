@@ -17,6 +17,8 @@ class _PlayerNameScreenState extends State<PlayerNameScreen> {
   final _ctrl = TextEditingController();
   final _focus = FocusNode();
   bool _valid = false;
+  late final GameProvider _gp;
+  bool _listenerAttached = false;
 
   bool get _isCreate => widget.action == 'create';
 
@@ -29,13 +31,20 @@ class _PlayerNameScreenState extends State<PlayerNameScreen> {
 
     // Escucha cambios de fase para navegar
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GameProvider>().addListener(_onPhaseChange);
+      if (!mounted) {
+        return;
+      }
+      _gp = context.read<GameProvider>();
+      _gp.addListener(_onPhaseChange);
+      _listenerAttached = true;
     });
   }
 
   @override
   void dispose() {
-    context.read<GameProvider>().removeListener(_onPhaseChange);
+    if (_listenerAttached) {
+      _gp.removeListener(_onPhaseChange);
+    }
     _ctrl.dispose();
     _focus.dispose();
     super.dispose();
@@ -43,10 +52,9 @@ class _PlayerNameScreenState extends State<PlayerNameScreen> {
 
   void _onPhaseChange() {
     if (!mounted) return;
-    final gp = context.read<GameProvider>();
-    if (gp.phase == RoomPhase.hostWaiting) {
+    if (_gp.phase == RoomPhase.hostWaiting) {
       context.go('/room-host');
-    } else if (gp.phase == RoomPhase.guestWaiting) {
+    } else if (_gp.phase == RoomPhase.guestWaiting) {
       context.go('/room-guest');
     }
   }

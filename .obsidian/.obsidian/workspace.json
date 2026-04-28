@@ -1,40 +1,20 @@
 {
   "main": {
-    "id": "43e1ef7616c8c736",
+    "id": "69f61021539015a4",
     "type": "split",
     "children": [
       {
-        "id": "d591984afa7a4f69",
+        "id": "74eaaf78601805d9",
         "type": "tabs",
         "children": [
           {
-            "id": "27a550d0aa6cfcb6",
+            "id": "91880e97c86bc4e7",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Planeacion-Implementacion-Flutter"
-            }
-          }
-        ]
-      },
-      {
-        "id": "d4102d22923e684c",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "9476c7e2d707c09a",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
+              "type": "empty",
               "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Vista gráfica"
+              "icon": "lucide-file",
+              "title": "New tab"
             }
           }
         ]
@@ -43,15 +23,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "753b90f8be4e72f7",
+    "id": "1e8ee8f30a4f5925",
     "type": "split",
     "children": [
       {
-        "id": "4ba1923beb518867",
+        "id": "1f413ab12409a98c",
         "type": "tabs",
         "children": [
           {
-            "id": "d1002407fdfdb28a",
+            "id": "1709851d3bc77899",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -60,11 +40,11 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Explorador de archivos"
+              "title": "Files"
             }
           },
           {
-            "id": "3719049e6eb3c05d",
+            "id": "1c188a94ee228507",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -77,17 +57,17 @@
                 "sortOrder": "alphabetical"
               },
               "icon": "lucide-search",
-              "title": "Buscar"
+              "title": "Search"
             }
           },
           {
-            "id": "09a391b00622e1b5",
+            "id": "0f9d5303a2a3b402",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
               "state": {},
               "icon": "lucide-bookmark",
-              "title": "Marcadores"
+              "title": "Bookmarks"
             }
           }
         ]
@@ -97,20 +77,19 @@
     "width": 300
   },
   "right": {
-    "id": "8347e62889f1cc93",
+    "id": "25dd96650c4c6cee",
     "type": "split",
     "children": [
       {
-        "id": "7a246eb315898f70",
+        "id": "adf1aed7bea0a218",
         "type": "tabs",
         "children": [
           {
-            "id": "d01d29eb105901b9",
+            "id": "d9149096e5120634",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -120,25 +99,24 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Enlaces entrantes de Planeacion-Implementacion-Flutter"
+              "title": "Backlinks"
             }
           },
           {
-            "id": "f161b02c0bf17e8e",
+            "id": "3dd157cc0530b04f",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Enlaces salientes de Planeacion-Implementacion-Flutter"
+              "title": "Outgoing links"
             }
           },
           {
-            "id": "6f3835998bdfe963",
+            "id": "6b327bc0feacf309",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -149,11 +127,11 @@
                 "searchQuery": ""
               },
               "icon": "lucide-tags",
-              "title": "Etiquetas"
+              "title": "Tags"
             }
           },
           {
-            "id": "66ec9222d16b8267",
+            "id": "29f48abc74ae1ce2",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -163,22 +141,21 @@
                 "searchQuery": ""
               },
               "icon": "lucide-archive",
-              "title": "Todas las propiedades"
+              "title": "All properties"
             }
           },
           {
-            "id": "0e88a97b813af832",
+            "id": "4d8c3cefb83d6cb3",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
-                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Esquema de Planeacion-Implementacion-Flutter"
+              "title": "Outline"
             }
           }
         ]
@@ -190,35 +167,15 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Abrir selector rápido": false,
-      "graph:Abrir vista gráfica": false,
-      "canvas:Crear nuevo lienzo": false,
-      "daily-notes:Abrir la nota de hoy": false,
-      "templates:Insertar plantilla": false,
-      "command-palette:Abrir paleta de comandos": false,
-      "bases:Crear nueva base": false
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
     }
   },
-  "active": "27a550d0aa6cfcb6",
-  "lastOpenFiles": [
-    "Sin título.md",
-    "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
-    "Sebastian-Rodriguez-Mesen/Prompts-Stitch-UI-UX.md",
-    "Sebastian-Rodriguez-Mesen/Checklist-UI-por-Pantalla.md",
-    "Sebastian-Rodriguez-Mesen/Modulos-UI-UX.md",
-    "Sebastian-Rodriguez-Mesen/Implementacion-UI-UX.md",
-    "03-Flujo-GitHub.md",
-    "Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md",
-    "Samiel-Marin-Cambronero/Implementacion-WebSocket.md",
-    "06-Backlog-Inicial.md",
-    "Samiel-Marin-Cambronero",
-    "Sebastian-Rodriguez-Mesen",
-    "Luis-Alejandro-Lopez-Reyes",
-    "05-Sprints.md",
-    "04-Flujo-Trello.md",
-    "02-Asignacion-Modulos.md",
-    "01-Plan-Maestro.md",
-    "00-Index.md",
-    "Bienvenido.md"
-  ]
+  "active": "91880e97c86bc4e7",
+  "lastOpenFiles": []
 }

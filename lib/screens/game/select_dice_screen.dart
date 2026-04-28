@@ -108,7 +108,7 @@ class _SelectDiceScreenState extends State<SelectDiceScreen> {
                                   ),
                           ),
                         ),
-                        child: DiceWidget(value: pool[i], size: 62),
+                        child: DiceWidget(value: pool[i], size: 62, color: gp.getDieColorByIndex(i),),
                       ),
                     );
                   }),

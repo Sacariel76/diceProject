@@ -1,40 +1,24 @@
 {
   "main": {
-    "id": "43e1ef7616c8c736",
+    "id": "153ec694b5b06cce",
     "type": "split",
     "children": [
       {
-        "id": "d591984afa7a4f69",
+        "id": "ccbc27fd9619a847",
         "type": "tabs",
         "children": [
           {
-            "id": "27a550d0aa6cfcb6",
+            "id": "ee2d81e757981321",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
+                "file": "brain-dice/04-Flujo-Trello.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Planeacion-Implementacion-Flutter"
-            }
-          }
-        ]
-      },
-      {
-        "id": "d4102d22923e684c",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "9476c7e2d707c09a",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Vista gráfica"
+              "title": "04-Flujo-Trello"
             }
           }
         ]
@@ -43,15 +27,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "753b90f8be4e72f7",
+    "id": "766d2dce3386bea0",
     "type": "split",
     "children": [
       {
-        "id": "4ba1923beb518867",
+        "id": "f4541a48f2c1ec46",
         "type": "tabs",
         "children": [
           {
-            "id": "d1002407fdfdb28a",
+            "id": "409be5bd16044f95",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -60,11 +44,11 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Explorador de archivos"
+              "title": "Files"
             }
           },
           {
-            "id": "3719049e6eb3c05d",
+            "id": "3bb9a036a9edfc03",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -77,17 +61,17 @@
                 "sortOrder": "alphabetical"
               },
               "icon": "lucide-search",
-              "title": "Buscar"
+              "title": "Search"
             }
           },
           {
-            "id": "09a391b00622e1b5",
+            "id": "de156026ea9b06ee",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
               "state": {},
               "icon": "lucide-bookmark",
-              "title": "Marcadores"
+              "title": "Bookmarks"
             }
           }
         ]
@@ -97,20 +81,20 @@
     "width": 300
   },
   "right": {
-    "id": "8347e62889f1cc93",
+    "id": "5a62c5e47a13a5ec",
     "type": "split",
     "children": [
       {
-        "id": "7a246eb315898f70",
+        "id": "d69ef5826032ac6f",
         "type": "tabs",
         "children": [
           {
-            "id": "d01d29eb105901b9",
+            "id": "09f8e51da4402812",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
+                "file": "brain-dice/04-Flujo-Trello.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -120,25 +104,25 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Enlaces entrantes de Planeacion-Implementacion-Flutter"
+              "title": "Backlinks for 04-Flujo-Trello"
             }
           },
           {
-            "id": "f161b02c0bf17e8e",
+            "id": "3c2cc9a4db942dee",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
+                "file": "brain-dice/04-Flujo-Trello.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Enlaces salientes de Planeacion-Implementacion-Flutter"
+              "title": "Outgoing links from 04-Flujo-Trello"
             }
           },
           {
-            "id": "6f3835998bdfe963",
+            "id": "ed6692226fa03329",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -149,11 +133,11 @@
                 "searchQuery": ""
               },
               "icon": "lucide-tags",
-              "title": "Etiquetas"
+              "title": "Tags"
             }
           },
           {
-            "id": "66ec9222d16b8267",
+            "id": "7428c6fa454b7c1f",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -163,22 +147,22 @@
                 "searchQuery": ""
               },
               "icon": "lucide-archive",
-              "title": "Todas las propiedades"
+              "title": "All properties"
             }
           },
           {
-            "id": "0e88a97b813af832",
+            "id": "3f3b4b5a34f0abe6",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
-                "file": "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
+                "file": "brain-dice/04-Flujo-Trello.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Esquema de Planeacion-Implementacion-Flutter"
+              "title": "Outline of 04-Flujo-Trello"
             }
           }
         ]
@@ -190,35 +174,23 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Abrir selector rápido": false,
-      "graph:Abrir vista gráfica": false,
-      "canvas:Crear nuevo lienzo": false,
-      "daily-notes:Abrir la nota de hoy": false,
-      "templates:Insertar plantilla": false,
-      "command-palette:Abrir paleta de comandos": false,
-      "bases:Crear nueva base": false
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
     }
   },
-  "active": "27a550d0aa6cfcb6",
+  "active": "ee2d81e757981321",
   "lastOpenFiles": [
-    "Sin título.md",
-    "Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
-    "Sebastian-Rodriguez-Mesen/Prompts-Stitch-UI-UX.md",
-    "Sebastian-Rodriguez-Mesen/Checklist-UI-por-Pantalla.md",
-    "Sebastian-Rodriguez-Mesen/Modulos-UI-UX.md",
-    "Sebastian-Rodriguez-Mesen/Implementacion-UI-UX.md",
-    "03-Flujo-GitHub.md",
-    "Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md",
-    "Samiel-Marin-Cambronero/Implementacion-WebSocket.md",
-    "06-Backlog-Inicial.md",
-    "Samiel-Marin-Cambronero",
-    "Sebastian-Rodriguez-Mesen",
-    "Luis-Alejandro-Lopez-Reyes",
-    "05-Sprints.md",
-    "04-Flujo-Trello.md",
-    "02-Asignacion-Modulos.md",
-    "01-Plan-Maestro.md",
-    "00-Index.md",
-    "Bienvenido.md"
+    "brain-dice/03-Flujo-GitHub.md",
+    "brain-dice/02-Asignacion-Modulos.md",
+    "brain-dice/00-Index.md",
+    "brain-dice/Sebastian-Rodriguez-Mesen/Planeacion-Implementacion-Flutter.md",
+    "brain-dice/Sebastian-Rodriguez-Mesen/Implementacion-UI-UX.md",
+    "brain-dice/Sebastian-Rodriguez-Mesen/Checklist-UI-por-Pantalla.md",
+    "brain-dice/Luis-Alejandro-Lopez-Reyes/Implementacion-Core-Game-Logic.md"
   ]
 }

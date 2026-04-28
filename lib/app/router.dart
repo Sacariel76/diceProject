@@ -7,6 +7,7 @@ import '../screens/lobby/lobby_screen.dart';
 import '../screens/room/room_host_screen.dart';
 import '../screens/room/room_guest_screen.dart';
 import '../screens/game/game_table_screen.dart';
+import '../screens/game/spectator_presentations_screen.dart';
 import '../screens/game/select_dice_screen.dart';
 import '../screens/game/prediction_screen.dart';
 import '../screens/results/round_results_screen.dart';
@@ -42,6 +43,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/game-table',
       builder: (ctx, state) => const GameTableScreen(),
+    ),
+    GoRoute(
+      path: '/spectator/presentations',
+      builder: (ctx, state) => const SpectatorPresentationsScreen(),
     ),
     GoRoute(
       path: '/play/select-dice',

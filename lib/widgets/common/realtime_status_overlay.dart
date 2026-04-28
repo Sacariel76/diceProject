@@ -15,6 +15,143 @@ class RealtimeStatusOverlay extends StatefulWidget {
 
 class _RealtimeStatusOverlayState extends State<RealtimeStatusOverlay> {
   String? _lastToast;
+  bool _isSpectatorPredictionDialogVisible = false;
+  bool _didOpenSpectatorPredictionDialogInCurrentPhase = false;
+  Route<void>? _spectatorPredictionDialogRoute;
+
+  bool _shouldShowSpectatorPredictionDialog(GameProvider gp) {
+    return gp.shouldUseSpectatorViews &&
+        gp.gameTurnPhase == GameTurnPhase.predicting;
+  }
+
+  void _syncSpectatorPredictionDialog(GameProvider gp) {
+    final shouldShow = _shouldShowSpectatorPredictionDialog(gp);
+
+    if (shouldShow) {
+      if (_didOpenSpectatorPredictionDialogInCurrentPhase ||
+          _isSpectatorPredictionDialogVisible) {
+        return;
+      }
+
+      _didOpenSpectatorPredictionDialogInCurrentPhase = true;
+      _openSpectatorPredictionDialog();
+      return;
+    }
+
+    _didOpenSpectatorPredictionDialogInCurrentPhase = false;
+    if (_isSpectatorPredictionDialogVisible) {
+      _closeSpectatorPredictionDialog();
+    }
+  }
+
+  void _openSpectatorPredictionDialog() {
+    if (!mounted || _isSpectatorPredictionDialogVisible) {
+      return;
+    }
+
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = DialogRoute<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return PopScope(
+          canPop: false,
+          child: Consumer<GameProvider>(
+            builder: (context, gp, _) {
+              final expected = gp.expectedPredictions > 0
+                  ? gp.expectedPredictions
+                  : gp.players.length;
+              final submitted = expected > 0
+                  ? gp.submittedPredictions.clamp(0, expected).toInt()
+                  : gp.submittedPredictions;
+
+              return AlertDialog(
+                title: Text(
+                  'Los jugadores estan eligiendo su carta secreta.',
+                  style: GoogleFonts.newsreader(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+                content: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Espera a que todos terminen para continuar.',
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          color: AppColors.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                      ),
+                      if (expected > 0) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          '$submitted de $expected jugadores ya eligieron.',
+                          style: GoogleFonts.manrope(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(
+                          value: expected == 0 ? null : submitted / expected,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(999),
+                          backgroundColor: AppColors.surfaceContainerHighest,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    _spectatorPredictionDialogRoute = route;
+    _isSpectatorPredictionDialogVisible = true;
+
+    navigator.push(route).whenComplete(() {
+      if (!mounted) {
+        return;
+      }
+      _isSpectatorPredictionDialogVisible = false;
+      _spectatorPredictionDialogRoute = null;
+    });
+  }
+
+  void _closeSpectatorPredictionDialog() {
+    final route = _spectatorPredictionDialogRoute;
+    if (route == null) {
+      return;
+    }
+
+    final navigator = Navigator.of(context, rootNavigator: true);
+    if (route.isActive) {
+      navigator.removeRoute(route);
+    }
+
+    _spectatorPredictionDialogRoute = null;
+    _isSpectatorPredictionDialogVisible = false;
+  }
+
+  @override
+  void dispose() {
+    final route = _spectatorPredictionDialogRoute;
+    if (route != null && route.isActive) {
+      route.navigator?.removeRoute(route);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +166,10 @@ class _RealtimeStatusOverlayState extends State<RealtimeStatusOverlay> {
       }
 
       final provider = context.read<GameProvider?>();
+      if (provider != null) {
+        _syncSpectatorPredictionDialog(provider);
+      }
+
       final info = provider?.consumeInfoMessage();
       if (info == null || info.isEmpty || info == _lastToast) {
         return;
