@@ -18,12 +18,14 @@
 
 Para mantener el código escalable, limpio y separado por responsabilidades, el proyecto utiliza una arquitectura orientada a funcionalidades. Todo el código fuente se encuentra dentro del directorio `lib/`:
 
-* 📁 **`models/`**: Contiene las clases de datos puras. Aquí se define la estructura lógica de los objetos del juego que no tienen interfaz gráfica (ej. `Dado`, `Jugador`, `Partida`).
-* 📁 **`screens/`**: Almacena las pantallas principales de la aplicación (vistas completas). Por ejemplo, la pantalla de inicio para unirse a la sala, la mesa de juego principal y la pantalla de puntajes finales.
-* 📁 **`widgets/`**: Componentes visuales reutilizables. Elementos de UI independientes que se repiten en varias partes de la app, como el diseño visual de un dado individual, la "torre" para ocultar los dados o las tarjetas de perfil de los rivales.
-* 📁 **`services/`**: Maneja toda la comunicación con el exterior. Aquí reside la lógica de red, específicamente el gestor de WebSockets encargado de enviar y recibir las acciones (en formato JSON) hacia y desde el servidor centralizado.
-* 📁 **`state/`**: Controladores y gestores del estado local de la aplicación. Se encarga de notificar a la interfaz gráfica cuándo los datos de la partida cambian (ej. cuando otro jugador lanza sus dados o termina la ronda).
-* 📁 **`utils/`**: Herramientas globales y lógica de negocio pura. Incluye archivos críticos como `game_rules.dart`, donde se alojan los algoritmos matemáticos para calcular los puntos, determinar desempates y evaluar las combinaciones presentadas.
+* 📄 **`main.dart`**: Punto de entrada de la app. Inicializa tema, rutas y el proveedor principal de estado.
+* 📁 **`app/`**: Configuración global (tema, colores y enrutamiento con `go_router`).
+* 📁 **`models/`**: Clases de datos (`player_model.dart`, `round_score_model.dart`).
+* 📁 **`screens/`**: Pantallas agrupadas por flujo/feature: `access/`, `lobby/`, `room/`, `game/`, `results/`, `help/`, `splash/`, `dev/`.
+* 📁 **`widgets/`**: UI reutilizable. `common/` (app bar, navegación, overlay de estado) y `game/` (dados).
+* 📁 **`services/`**: Comunicación en tiempo real (`websocket_service.dart`). El servidor WebSocket corre en una VM (EC2) de AWS con backend en Rust y base de datos MongoDB.
+* 📁 **`state/`**: Estado central con `GameProvider` (ChangeNotifier) y sincronización con el WebSocket.
+* 📁 **`utils/`**: Utilidades de plataforma, como el portapapeles de código de sala (`room_code_clipboard.dart` + variantes web/IO).
 
 ## 🚀 Configuración Inicial
 
@@ -40,8 +42,11 @@ Para más ayuda con el desarrollo en Flutter, consulta la [documentación en lí
 
 Para el funcionamiento de este proyecto, se han integrado las siguientes librerías clave:
 
-* flutter pub add web_socket_channel
-* **dart:convert:** Librería nativa de Dart empleada para la serialización y deserialización de objetos JSON, permitiendo que la App y el servidor de Rust intercambien datos complejos de forma eficiente.
+* **web_socket_channel:** Comunicación en tiempo real vía WebSocket.
+* **provider:** Manejo del estado con `GameProvider`.
+* **go_router:** Enrutamiento declarativo de pantallas.
+* **google_fonts:** Tipografías personalizadas.
+* **dart:convert:** Serialización y deserialización JSON entre app y servidor.
 
 ## 📜 Reglas del Juego
 
@@ -79,7 +84,7 @@ Para el funcionamiento de este proyecto, se han integrado las siguientes librer�
     * **More:** El puntaje de la ronda queda entre 7 y 10.
     * **Max:** El puntaje de la ronda queda de 10 para arriba.
 18. Los jugadores que predigan su puntuación de forma correcta en esa ronda se le recompensará con puntos adicionales dependiendo de la carta seleccionada, en caso de acertar, al jugador se le otorgarán el doble del puntaje que tenga en ese momento, sin embargo, el que prediga un puntaje de 0 se le otorgarán 40 puntos automáticamente.
-19. Son 4 rondas y el juego termina justo después de la 4ta ronda, el que tenga la mayor cantidad de puntos gana, en caso de que varios tengan el mismo puntaje al finalizar, la victoria se anulará y se la dará al siguiente en la lista del puntaje del más alto.
+19. Son 4 rondas (2 para la demostración) y el juego termina justo después de la 4ta ronda, el que tenga la mayor cantidad de puntos gana, en caso de que varios tengan el mismo puntaje al finalizar, la victoria se anulará y se la dará al siguiente en la lista del puntaje del más alto.
 
 ## 🔄 Lógica y Flujo de Desarrollo
 
@@ -87,7 +92,7 @@ Para la implementación técnica en Flutter, el ciclo de vida del juego y la ges
 
 ### 🏗️ Ciclo de Vida de la Partida (Game Loop)
 
-La partida se compone de 4 Rondas Grandes. Cada una de estas rondas debe ejecutar obligatoriamente las siguientes fases:
+La partida se compone de 4 Rondas Grandes (2 para efectos de demostración). Cada una de estas rondas debe ejecutar obligatoriamente las siguientes fases:
 
 #### Fase 1: Preparación y Lanzamiento
 
@@ -124,7 +129,7 @@ Cada ronda se divide en tres actos de selección:
 
 ### 🛠️ Algoritmo de Evaluación de Combinaciones
 
-La función de evaluación en `game_rules.dart` procesa los tres dados seleccionados `[d1, d2, d3]` bajo la siguiente jerarquía de prioridad:
+La detección de la combinación que se muestra al usuario se realiza en la UI (por ejemplo, en `SelectDiceScreen`) con la siguiente jerarquía de prioridad:
 
 * **Triple (6 pts):** `d1 == d2 && d2 == d3`.
 * **Escalera (3 pts):** Se ordena la lista y se verifica que sean consecutivos. Importante: La combinación `(6, 1, 2)` no es válida.
@@ -135,6 +140,6 @@ La función de evaluación en `game_rules.dart` procesa los tres dados seleccion
 
 ### 💡 Notas de Implementación (Flutter)
 
-* **Gestión de Estado:** Se recomienda el uso de Provider o Riverpod para manejar la sincronización entre los datos recibidos por el WebSocket y la actualización de la UI en tiempo real.
+* **Gestión de Estado:** Se utiliza Provider con `GameProvider` para sincronizar los datos recibidos por WebSocket y la UI en tiempo real.
 * **Componentes Visuales:** El DiceWidget debe ser capaz de renderizar diferentes temas (Blanco, Rojo, Azul) y estados (Oculto en torre/Revelado).
 * **Seguridad de la Información:** La lógica de "qué dados tiene el rival" no debe enviarse completa a todos los clientes para evitar trampas (inspección de estado), solo se deben enviar los datos marcados como "Públicos" en la matriz de visibilidad.
